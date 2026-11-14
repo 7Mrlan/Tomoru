@@ -695,6 +695,22 @@ func (msgs Messages) StyleImmersive() string {
 	return Catalog.Format(msgs.locale, "styleImmersive", nil)
 }
 
+// BoxOpacity says "Box opacity"
+// in the language the app shows.
+//
+// Label of a slider: how opaque the dark box behind the subtitles is, in
+// percent.
+func BoxOpacity() string { return In(i18n.Locale()).BoxOpacity() }
+
+// BoxOpacity says "Box opacity"
+// in the language of msgs.
+//
+// Label of a slider: how opaque the dark box behind the subtitles is, in
+// percent.
+func (msgs Messages) BoxOpacity() string {
+	return Catalog.Format(msgs.locale, "boxOpacity", nil)
+}
+
 // AlignLabel says "Alignment"
 // in the language the app shows.
 //
@@ -937,6 +953,20 @@ func (msgs Messages) TgtSize() string {
 	return Catalog.Format(msgs.locale, "tgtSize", nil)
 }
 
+// TextOpacity says "Text opacity"
+// in the language the app shows.
+//
+// Label of a slider: how opaque the subtitles' text is, in percent.
+func TextOpacity() string { return In(i18n.Locale()).TextOpacity() }
+
+// TextOpacity says "Text opacity"
+// in the language of msgs.
+//
+// Label of a slider: how opaque the subtitles' text is, in percent.
+func (msgs Messages) TextOpacity() string {
+	return Catalog.Format(msgs.locale, "textOpacity", nil)
+}
+
 // SrcColor says "Original text color"
 // in the language the app shows.
 //
@@ -1157,6 +1187,22 @@ func ShownLabel() string { return In(i18n.Locale()).ShownLabel() }
 // Label of how many sentences show at once.
 func (msgs Messages) ShownLabel() string {
 	return Catalog.Format(msgs.locale, "shownLabel", nil)
+}
+
+// OlderOpacity says "Earlier subtitles' opacity"
+// in the language the app shows.
+//
+// Label of a slider: how opaque the subtitles above the newest one are, in
+// percent; those farther up are fainter still.
+func OlderOpacity() string { return In(i18n.Locale()).OlderOpacity() }
+
+// OlderOpacity says "Earlier subtitles' opacity"
+// in the language of msgs.
+//
+// Label of a slider: how opaque the subtitles above the newest one are, in
+// percent; those farther up are fainter still.
+func (msgs Messages) OlderOpacity() string {
+	return Catalog.Format(msgs.locale, "olderOpacity", nil)
 }
 
 // ShownFewer says "Show one fewer"

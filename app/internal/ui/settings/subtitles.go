@@ -42,8 +42,8 @@ func (s *Settings) subtitles(c *ui.Context) {
 	custom := s.customColors || schemeOf(p) == ""
 	// The two cards side by side, as wide as each other, their controls in one column: they wrap
 	// before a name would be cut.
-	basis := kit.ControlCardWidth(c, locales.StyleLabel(), locales.EdgeLabel(), locales.AlignLabel(), locales.FontLabel(),
-		locales.SrcSize(), locales.TgtSize(), locales.OrderLabel(), locales.ColorScheme())
+	basis := kit.ControlCardWidth(c, locales.StyleLabel(), locales.BoxOpacity(), locales.EdgeLabel(), locales.AlignLabel(), locales.FontLabel(),
+		locales.SrcSize(), locales.TgtSize(), locales.TextOpacity(), locales.OrderLabel(), locales.ColorScheme())
 	kit.Groups(c, func() {
 		kit.Group(c, locales.StyleLook(), nil, kit.RowsCard, func() { s.styleLook(c, p) }).Grow(1).Basis(basis)
 		kit.Group(c, locales.StyleText(), nil, kit.RowsCard, func() { s.styleText(c, p, custom) }).Grow(1).Basis(basis)
@@ -55,7 +55,7 @@ func (s *Settings) subtitles(c *ui.Context) {
 	s.fontDialog(c)
 }
 
-// styleLook is the background, the edge, the alignment and the font.
+// styleLook is the background and its opacity, the edge, the alignment and the font.
 func (s *Settings) styleLook(c *ui.Context, p *prefs.Prefs) {
 	kit.SettingRow(c, 0, locales.StyleLabel(), "", func() {
 		kit.Control(c, func() {
@@ -65,17 +65,20 @@ func (s *Settings) styleLook(c *ui.Context, p *prefs.Prefs) {
 			}
 		})
 	})
-	kit.SettingRow(c, 1, locales.EdgeLabel(), "", func() {
+	kit.SettingRowOff(c, 1, locales.BoxOpacity(), "", p.Style == 1, func() {
+		kit.Control(c, func() { kit.Slider(c, &p.BoxOpacity, 0, 100, "%", locales.BoxOpacity()).Grow(1) })
+	})
+	kit.SettingRow(c, 2, locales.EdgeLabel(), "", func() {
 		kit.Control(c, func() {
 			kit.Segmented(c, &p.Edge, locales.EdgeNone(), locales.EdgeOutline(), locales.EdgeShadow()).Grow(1).Label(locales.EdgeLabel())
 		})
 	})
-	kit.SettingRow(c, 2, locales.AlignLabel(), "", func() {
+	kit.SettingRow(c, 3, locales.AlignLabel(), "", func() {
 		kit.Control(c, func() {
 			kit.Segmented(c, &p.Align, locales.AlignLeft(), locales.AlignCenter()).Grow(1).Label(locales.AlignLabel())
 		})
 	})
-	kit.SettingRow(c, 3, locales.FontLabel(), "", func() {
+	kit.SettingRow(c, 4, locales.FontLabel(), "", func() {
 		kit.Control(c, func() {
 			font := subtitleFont(p.Font)
 			kit.Picker(c, shared.FontName(font), s.fontMenu(font)).Grow(1).Shrink(1).MinWidth(0).Label(locales.FontLabel())
@@ -83,19 +86,20 @@ func (s *Settings) styleLook(c *ui.Context, p *prefs.Prefs) {
 	})
 }
 
-// styleText is the sizes and the order of the two lines, and their colors: a scheme, or with
-// custom, colors of one's own, which styleColors sets under the cards.
+// styleText is the sizes and the order of the two lines, their opacity, and their colors: a
+// scheme, or with custom, colors of one's own, which styleColors sets under the cards.
 func (s *Settings) styleText(c *ui.Context, p *prefs.Prefs, custom bool) {
 	// With one of the two only, the other's size and the order do nothing: they stay, greyed.
 	tgtOnly, srcOnly := p.Display == prefs.DisplayTgt, p.Display == prefs.DisplaySrc
-	size := func(i int, label string, off bool, v *float64, lo, hi float64) {
+	slider := func(i int, label string, off bool, v *float64, lo, hi float64, unit string) {
 		kit.SettingRowOff(c, i, label, "", off, func() {
-			kit.Control(c, func() { kit.Slider(c, v, lo, hi, label).Grow(1) })
+			kit.Control(c, func() { kit.Slider(c, v, lo, hi, unit, label).Grow(1) })
 		})
 	}
-	size(0, locales.SrcSize(), tgtOnly, &p.SrcSize, 14, 36)
-	size(1, locales.TgtSize(), srcOnly, &p.TgtSize, 18, 48)
-	kit.SettingRowOff(c, 2, locales.OrderLabel(), "", tgtOnly || srcOnly, func() {
+	slider(0, locales.SrcSize(), tgtOnly, &p.SrcSize, 14, 36, "")
+	slider(1, locales.TgtSize(), srcOnly, &p.TgtSize, 18, 48, "")
+	slider(2, locales.TextOpacity(), false, &p.TextOpacity, prefs.MinTextOpacity, 100, "%")
+	kit.SettingRowOff(c, 3, locales.OrderLabel(), "", tgtOnly || srcOnly, func() {
 		kit.Control(c, func() {
 			order := 0
 			if p.TgtFirst {
@@ -106,7 +110,7 @@ func (s *Settings) styleText(c *ui.Context, p *prefs.Prefs, custom bool) {
 			}
 		})
 	})
-	kit.SettingRow(c, 3, locales.ColorScheme(), "", func() {
+	kit.SettingRow(c, 4, locales.ColorScheme(), "", func() {
 		kit.Control(c, func() {
 			for _, sc := range subtitle.Schemes {
 				if kit.SchemeSwatch(c.Key(sc.ID), schemeName(sc.ID), ui.Hex(sc.Edge), ui.Hex(sc.Src), ui.Hex(sc.Tgt), !custom && schemeOf(p) == sc.ID).Clicked() {
@@ -134,7 +138,8 @@ func styleColors(c *ui.Context, p *prefs.Prefs) {
 	}
 }
 
-// styleShow is what shows, how many sentences, when they go, and whether recordings show them.
+// styleShow is what shows, how many sentences and how faint the earlier ones, when they go, and
+// whether recordings show them.
 func (s *Settings) styleShow(c *ui.Context, p *prefs.Prefs) {
 	kit.SettingRow(c, 0, locales.DisplayLabel(), "", func() {
 		kit.Segmented(c, &p.Display, locales.DisplayBoth(), locales.DisplayTgt(), locales.DisplaySrc()).Label(locales.DisplayLabel())
@@ -142,13 +147,18 @@ func (s *Settings) styleShow(c *ui.Context, p *prefs.Prefs) {
 	kit.SettingRow(c, 1, locales.ShownLabel(), "", func() {
 		kit.Stepper(c, &p.Shown, 1, prefs.MaxShown, locales.ShownFewer(), locales.ShownMore())
 	})
-	kit.SettingRow(c, 2, locales.HideAfterLabel(), "", func() {
+	kit.SettingRowOff(c, 2, locales.OlderOpacity(), "", p.Shown == 1, func() {
+		kit.Control(c, func() {
+			kit.Slider(c, &p.OlderOpacity, prefs.MinOlderOpacity, 100, "%", locales.OlderOpacity()).Grow(1)
+		})
+	})
+	kit.SettingRow(c, 3, locales.HideAfterLabel(), "", func() {
 		hide := !p.KeepShown
 		if kit.Switch(c, &hide, locales.HideAfterLabel()).Changed() {
 			p.KeepShown = !hide
 		}
 	})
-	i := 3
+	i := 4
 	if !p.KeepShown {
 		kit.SettingRow(c, i, locales.HideWait(), "", func() {
 			kit.Stepper(c, &p.HideAfter, 2, 10, locales.HideWaitLess(), locales.HideWaitMore())

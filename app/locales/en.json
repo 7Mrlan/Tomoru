@@ -205,6 +205,10 @@
   "@styleImmersive": {
     "description": "A subtitle style: the text alone, as a film's."
   },
+  "boxOpacity": "Box opacity",
+  "@boxOpacity": {
+    "description": "Label of a slider: how opaque the dark box behind the subtitles is, in percent."
+  },
   "alignLabel": "Alignment",
   "@alignLabel": {
     "description": "Label of the subtitles' alignment."
@@ -273,6 +277,10 @@
   "@tgtSize": {
     "description": "Label of the size of the translation."
   },
+  "textOpacity": "Text opacity",
+  "@textOpacity": {
+    "description": "Label of a slider: how opaque the subtitles' text is, in percent."
+  },
   "srcColor": "Original text color",
   "@srcColor": {
     "description": "Label of the color of the original text."
@@ -332,6 +340,10 @@
   "shownLabel": "Sentences at once",
   "@shownLabel": {
     "description": "Label of how many sentences show at once."
+  },
+  "olderOpacity": "Earlier subtitles' opacity",
+  "@olderOpacity": {
+    "description": "Label of a slider: how opaque the subtitles above the newest one are, in percent; those farther up are fainter still."
   },
   "shownFewer": "Show one fewer",
   "@shownFewer": {

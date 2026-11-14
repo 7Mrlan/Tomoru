@@ -156,3 +156,45 @@ func TestOrder(t *testing.T) {
 		}
 	}
 }
+
+// TestOpacity draws the text and the box as opaque as chosen, and a sentence still being spoken
+// in the original's color, a little faint. The tester's page is white.
+func TestOpacity(t *testing.T) {
+	draw := func(text, box float64) (ink, beside uint8) {
+		p := prefs.Default("en")
+		p.Display, p.Style, p.Edge, p.SrcColor = prefs.DisplaySrc, 0, 0, "#ff0000"
+		p.TextOpacity, p.BoxOpacity = text, box
+		tt := ui.NewTester(func(c *ui.Context) {
+			Draw(c, []Entry{{Key: 1, Src: "こんばんは", Pending: true}}, p, 1, 600, NoBlock)
+		}, 640, 300)
+		r, ok := tt.Find("こんばんは")
+		if !ok {
+			t.Fatalf("texts %q", tt.Texts())
+		}
+		img := tt.Image()
+		var g uint8
+		for y := int(r.Y); y < int(r.Y+r.H); y++ {
+			for x := int(r.X); x < int(r.X+r.W); x++ {
+				if px := img.RGBAAt(x, y); px.R > ink {
+					ink, g = px.R, px.G
+				}
+			}
+		}
+		if box == 100 && g > ink/4 {
+			t.Errorf("text %v: not in the original's color: red %d, green %d", text, ink, g)
+		}
+		return ink, img.RGBAAt(int(r.X)-6, int(r.Y+r.H/2)).G
+	}
+	full, black := draw(100, 100)
+	half, _ := draw(50, 100)
+	_, white := draw(100, 0)
+	if full < 190 || full > 220 {
+		t.Errorf("pending text at %d, want about .8 of 255", full)
+	}
+	if d := int(half) - int(full)/2; d < -12 || d > 12 {
+		t.Errorf("half opacity at %d, full at %d", half, full)
+	}
+	if black > 5 || white < 250 {
+		t.Errorf("beside the text, an opaque box %d, none %d", black, white)
+	}
+}
