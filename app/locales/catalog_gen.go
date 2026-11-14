@@ -6789,6 +6789,40 @@ func (msgs Messages) SampleNoVoiceWin(language string) string {
 	return Catalog.Format(msgs.locale, "sampleNoVoiceWin", map[string]any{"language": language})
 }
 
+// OpenPanel says "Show Panel"
+// in the language the app shows.
+//
+// In the tray icon's menu, on Linux, where clicking the icon opens its
+// menu: shows the panel, which changes languages and what to hear.
+func OpenPanel() string { return In(i18n.Locale()).OpenPanel() }
+
+// OpenPanel says "Show Panel"
+// in the language of msgs.
+//
+// In the tray icon's menu, on Linux, where clicking the icon opens its
+// menu: shows the panel, which changes languages and what to hear.
+func (msgs Messages) OpenPanel() string {
+	return Catalog.Format(msgs.locale, "openPanel", nil)
+}
+
+// SampleNoVoiceLinux says "Tomoru can't say the sample on Linux yet. Play a video in {language} instead."
+// in the language the app shows.
+//
+// Guide, try step, on Linux, which has no voice for the app to say the
+// sample with.
+func SampleNoVoiceLinux(language string) string {
+	return In(i18n.Locale()).SampleNoVoiceLinux(language)
+}
+
+// SampleNoVoiceLinux says "Tomoru can't say the sample on Linux yet. Play a video in {language} instead."
+// in the language of msgs.
+//
+// Guide, try step, on Linux, which has no voice for the app to say the
+// sample with.
+func (msgs Messages) SampleNoVoiceLinux(language string) string {
+	return Catalog.Format(msgs.locale, "sampleNoVoiceLinux", map[string]any{"language": language})
+}
+
 // GuideReadyTray says "Click Tomoru's icon in the corner of the taskbar to change languages and what to hear; right-click it to start transl…"
 // in the language the app shows.
 //
@@ -6803,6 +6837,22 @@ func (msgs Messages) GuideReadyTray() string {
 	return Catalog.Format(msgs.locale, "guideReadyTray", nil)
 }
 
+// GuideReadyLinux says "Click Tomoru's icon in the top bar or the system tray to start translating or open settings; Show Panel changes langu…"
+// in the language the app shows.
+//
+// Guide, last step, on Linux: where the app is afterwards. Show Panel is
+// openPanel, as the menu says it.
+func GuideReadyLinux() string { return In(i18n.Locale()).GuideReadyLinux() }
+
+// GuideReadyLinux says "Click Tomoru's icon in the top bar or the system tray to start translating or open settings; Show Panel changes langu…"
+// in the language of msgs.
+//
+// Guide, last step, on Linux: where the app is afterwards. Show Panel is
+// openPanel, as the menu says it.
+func (msgs Messages) GuideReadyLinux() string {
+	return Catalog.Format(msgs.locale, "guideReadyLinux", nil)
+}
+
 // ShowInExplorer says "Show in File Explorer"
 // in the language the app shows.
 //
@@ -6815,6 +6865,20 @@ func ShowInExplorer() string { return In(i18n.Locale()).ShowInExplorer() }
 // Button of a session kept, on Windows: shows its file in File Explorer.
 func (msgs Messages) ShowInExplorer() string {
 	return Catalog.Format(msgs.locale, "showInExplorer", nil)
+}
+
+// ShowInFolder says "Show in Folder"
+// in the language the app shows.
+//
+// Button of a session kept, on Linux: shows its file in the file manager.
+func ShowInFolder() string { return In(i18n.Locale()).ShowInFolder() }
+
+// ShowInFolder says "Show in Folder"
+// in the language of msgs.
+//
+// Button of a session kept, on Linux: shows its file in the file manager.
+func (msgs Messages) ShowInFolder() string {
+	return Catalog.Format(msgs.locale, "showInFolder", nil)
 }
 
 // EngineNone says "None yet"

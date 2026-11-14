@@ -1,4 +1,4 @@
-package main
+package shared
 
 import (
 	"bytes"
@@ -109,7 +109,7 @@ func TestHearerResumesWithoutSilenceBacklog(t *testing.T) {
 	// enough to exercise the bound without allocating an hour of PCM on failure.
 	now = now.Add(3 * time.Second)
 	h.FillSilence()
-	if h.sent > chunk+100+2*rate {
+	if h.sent > chunk+100+2*Rate {
 		t.Fatalf("resumed with %d samples of silence", h.sent-chunk-100)
 	}
 	before := h.sent
@@ -119,7 +119,7 @@ func TestHearerResumesWithoutSilenceBacklog(t *testing.T) {
 		t.Fatalf("the next tick still caught up: %d samples", h.sent-before)
 	}
 	for i, e := range events {
-		if e.T != float64(i*chunk)/rate {
+		if e.T != float64(i*chunk)/Rate {
 			t.Fatalf("audio clock jumped at chunk %d: %v", i, e.T)
 		}
 	}

@@ -14,18 +14,20 @@ import (
 	"unsafe"
 
 	"golang.org/x/sys/windows"
+
+	"tomoru-engine-shared"
 )
 
 // systemSource hears the default playback device, or app alone, a program's file name, with
 // its helpers (a browser's audio process is a child of the browser). An
 // app that is not running yet is heard once it starts, and again once it starts again.
-func systemSource(app string) Source { return &loopback{app: strings.ToLower(app)} }
+func systemSource(app string) shared.Source { return &loopback{app: strings.ToLower(app)} }
 
 type loopback struct{ app string }
 
 // The formats to capture, in order: the one sent, else one the audio engine surely gives, which is
 // made it here.
-var formats = []struct{ rate, channels int }{{rate, 1}, {48000, 2}}
+var formats = []struct{ rate, channels int }{{shared.Rate, 1}, {48000, 2}}
 
 func (l *loopback) Start(feed func([]int16)) error {
 	if l.app == "" {
@@ -108,7 +110,7 @@ func (l *loopback) run(pid uint32, feed func([]int16), opened chan<- error, ende
 		}
 		// What arrives, logged every 30 s: silence, as much as sound, says capture works.
 		if time.Since(report) >= 30*time.Second {
-			log.Printf("capture: %.1f s of audio, peak %.4f", float64(frames)/rate, float64(peak)/32768)
+			log.Printf("capture: %.1f s of audio, peak %.4f", float64(frames)/shared.Rate, float64(peak)/32768)
 			frames, peak, report = 0, 0, time.Now()
 		}
 		if time.Since(check) >= time.Second {
@@ -139,7 +141,7 @@ type converter struct {
 }
 
 func newConverter(r, channels int) *converter {
-	return &converter{channels: channels, factor: r / rate}
+	return &converter{channels: channels, factor: r / shared.Rate}
 }
 
 func (c *converter) convert(in []int16) []int16 {

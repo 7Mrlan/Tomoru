@@ -1,4 +1,4 @@
-package main
+package shared
 
 import (
 	"encoding/base64"
@@ -12,7 +12,7 @@ import (
 // detection runs on the audio sent, for the cloud's session to hang up while nobody speaks.
 
 const (
-	rate  = 16000 // samples a second of what is sent: mono, 16-bit
+	Rate  = 16000 // samples a second of what is sent: mono, 16-bit
 	chunk = 1600  // samples an `audio` object carries: 100 ms
 )
 
@@ -75,15 +75,15 @@ func (h *Hearer) FillSilence() {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	now := h.now()
-	due := int64(now.Sub(h.started).Seconds() * rate)
+	due := int64(now.Sub(h.started).Seconds() * Rate)
 	have := h.sent + int64(len(h.pending))
 	if now.Sub(h.lastFeed) > 300*time.Millisecond && due > have {
 		missing := due - have
 		// A suspended process must not send the entire sleep as PCM. Keep enough
 		// silence to finalize speech, then resume the clock at the samples sent.
-		if missing > 2*rate {
-			missing = 2 * rate
-			h.started = now.Add(-time.Duration(have+missing) * (time.Second / rate))
+		if missing > 2*Rate {
+			missing = 2 * Rate
+			h.started = now.Add(-time.Duration(have+missing) * (time.Second / Rate))
 		}
 		h.pending = append(h.pending, make([]int16, missing)...)
 		h.flush()
@@ -98,7 +98,7 @@ func (h *Hearer) flush() {
 		for i, s := range c {
 			binary.LittleEndian.PutUint16(b[2*i:], uint16(s))
 		}
-		h.send(Event{Type: "audio", T: float64(h.sent) / rate, PCM: base64.StdEncoding.EncodeToString(b)})
+		h.send(Event{Type: "audio", T: float64(h.sent) / Rate, PCM: base64.StdEncoding.EncodeToString(b)})
 		if h.voice != nil {
 			x := make([]float32, chunk)
 			for i, s := range c {

@@ -3,10 +3,10 @@
 # against its SHA-256: app/resources/<platform>/bin/llama-server and the libraries it loads (from
 # beside it), and its license in app/resources/<platform>/licenses/.
 #
-#	scripts/fetch-llama.sh [darwin-arm64 | windows-amd64]   (default: darwin-arm64)
+#	scripts/fetch-llama.sh [darwin-arm64 | windows-amd64 | linux-amd64]   (default: darwin-arm64)
 #
-# The release is pinned: the one Tomoru's local translation was measured with. On Windows it is
-# the Vulkan build, which runs on any maker's GPU, and on the CPU without one.
+# The release is pinned: the one Tomoru's local translation was measured with. On Windows and
+# Linux it is the Vulkan build, which runs on any maker's GPU, and on the CPU without one.
 set -e
 TAG=b11960 # llama.cpp v0.8.0
 platform=${1:-darwin-arm64}
@@ -17,6 +17,9 @@ darwin-arm64)
 windows-amd64)
 	SHA256=bac6914b5e83523eb008c6789eaa12669f93fbc196c3b9e8237b6672323b33e9
 	URL=https://github.com/ggml-org/llama.cpp/releases/download/$TAG/llama-$TAG-bin-win-vulkan-x64.zip ;;
+linux-amd64)
+	SHA256=164199e978304bb32a8a6c24b8efa015528ddf286821596eab676c90b375feac
+	URL=https://github.com/ggml-org/llama.cpp/releases/download/$TAG/llama-$TAG-bin-ubuntu-vulkan-x64.tar.gz ;;
 *)
 	echo "unknown platform $platform" >&2
 	exit 2 ;;
@@ -35,7 +38,31 @@ mkdir -p "$res/bin" "$res/licenses"
 # An earlier release's files, which this one may not have (b9840's libomp140.x86_64.dll).
 rm -f "$res"/bin/llama-server* "$res"/bin/*llama* "$res"/bin/*ggml* "$res"/bin/*mtmd* "$res"/bin/libomp*
 
-if [ "$platform" = windows-amd64 ]; then
+if [ "$platform" = linux-amd64 ]; then
+	tar -xzf "$tmp/llama" -C "$tmp/x"
+	src="$tmp/x/llama-$TAG"
+	# llama-server and the libraries it needs, through those they need (each by the name it is
+	# needed by, a link's file), and ggml's backends, which ggml loads as it starts.
+	need="llama-server"
+	todo="llama-server"
+	while [ -n "$todo" ]; do
+		next=""
+		for f in $todo; do
+			readelf -d "$src/$f" >"$tmp/needed" # apart, for set -e to stop at its failure
+			for lib in $(sed -n 's/.*(NEEDED).*\[\(.*\)\]/\1/p' "$tmp/needed"); do
+				[ -e "$src/$lib" ] || continue # the system's
+				case " $need " in *" $lib "*) ;; *) need="$need $lib"; next="$next $lib" ;; esac
+			done
+		done
+		todo=$next
+	done
+	for f in "$src"/libggml-cpu-*.so "$src"/libggml-vulkan.so; do
+		need="$need $(basename "$f")"
+	done
+	for f in $need; do
+		cp -L "$src/$f" "$res/bin/"
+	done
+elif [ "$platform" = windows-amd64 ]; then
 	unzip -q "$tmp/llama" -d "$tmp/x"
 	src="$tmp/x"
 	# llama-server.exe and the libraries it imports, through those they import (objdump of

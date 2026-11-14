@@ -48,3 +48,17 @@ func TestTrayMenu(t *testing.T) {
 		t.Errorf("subtitles stopped: %q", got)
 	}
 }
+
+// TestTrayMenuOnly has the menu of an icon that only has its menu, Linux's, show the panel first.
+func TestTrayMenuOnly(t *testing.T) {
+	defer func(was bool) { menuOnly = was }(menuOnly)
+	menuOnly = true
+	s := &Shell{core: coretest.New()}
+	m := s.trayMenu()
+	if got := m.Items()[0].Label; got != locales.OpenPanel() {
+		t.Fatalf("first %q, want %q", got, locales.OpenPanel())
+	}
+	if got := m.Items()[1].Label; got != locales.StartTranslating() {
+		t.Errorf("then %q, want %q", got, locales.StartTranslating())
+	}
+}

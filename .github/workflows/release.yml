@@ -122,6 +122,7 @@ jobs:
           cache-dependency-path: |
             app/go.sum
             engine/asr/go.sum
+            engine/shared/go.sum
             engine/windows/go.sum
       - uses: msys2/setup-msys2@v2
         with:

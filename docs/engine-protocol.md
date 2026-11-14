@@ -17,8 +17,13 @@ The macOS engine is `engine/mac` (Swift: Core Audio tap + SpeechAnalyzer), built
 `tomoru-engine` into `app/resources/darwin-arm64/bin/`. The Windows engine is `engine/windows`
 (Go, its calls into Windows in C: WASAPI's endpoint and process loopback, SAPI, and a window of its own to select
 a part of the screen), built as `tomoru-engine.exe` into `app/resources/windows-amd64/bin/` by
-`scripts/build-engine-windows.sh`. Windows has no speech recognition for apps, so it only hears:
-`listen` needs `--asr none`, and `prepare` fails with `unsupported-locale`.
+`scripts/build-engine-windows.sh`. The Linux engine is `engine/linux` (Go, its calls into
+PulseAudio's API in C: the default output's monitor, which PipeWire serves too), built as
+`tomoru-engine` into `app/resources/linux-amd64/bin/` by `scripts/build-engine-linux.sh`; it does
+not speak, list apps or select yet. The two Go engines share `engine/shared`: the protocol, the
+command line, hearing and voice detection. Windows and Linux have no speech recognition for apps,
+so their engines only hear: `listen` needs `--asr none`, and `prepare` fails with
+`unsupported-locale`.
 
 Recognition with a downloaded model is not the platform's: the app cuts the audio a platform
 engine hears with `listen --asr none` into stretches of speech by the engine's `voice` events, and
@@ -256,7 +261,7 @@ fields/events, error termination, and stdin commands. Both Go modules load it in
 tests. The ASR tests also verify EOF flushing and malformed input; the app tests start actual
 child processes to verify graceful EOF, forced shutdown, blocked writes and protocol failure.
 
-The Windows engine's tests (`engine/windows`, which run on any computer) check its producers and
+The Go engines' tests (`engine/shared`, which run on any computer) check their producers and
 command reader against the same fixtures.
 
 The Swift verifier compiles the production `Protocol.swift` with

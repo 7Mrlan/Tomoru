@@ -31,7 +31,7 @@ func (g *Guide) ready(c *ui.Context) {
 			})
 		})
 	}
-	tip(1, func() { template(c, assets.Tray, 16, pal.LanternText) }, shared.OnWindows(locales.GuideReadyMenuBar(), locales.GuideReadyTray()))
+	tip(1, func() { template(c, assets.Tray, 16, pal.LanternText) }, shared.OnEach(locales.GuideReadyMenuBar(), locales.GuideReadyTray(), locales.GuideReadyLinux()))
 	tip(2, func() { ui.Icon(c, assets.Pointer).FontSize(kit.IconSizeMenu).TextColor(pal.LanternText) }, locales.GuideReadySubtitles())
 }
 

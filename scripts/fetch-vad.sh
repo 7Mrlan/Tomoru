@@ -3,8 +3,8 @@
 # app/resources/darwin-arm64/vad/:
 # - silero-vad.mlmodelc, for the engine: Silero VAD v6.0.0 (MIT) as Core ML, converted by
 #   FluidInference (MIT); the revision is pinned.
-# - silero_vad.onnx, for tomoru-asr: the one sherpa-onnx publishes for itself (MIT). On Windows,
-#   where it is all there is, the engine's too: in app/resources/windows-amd64/vad/.
+# - silero_vad.onnx, for tomoru-asr: the one sherpa-onnx publishes for itself (MIT). On Windows
+#   and Linux, where it is all there is, the engine's too: in app/resources/<platform>/vad/.
 # Each finds it beside its bin directory.
 set -e
 REV=b419383c55c110e2c9271fa6ee0ea83d03c70d96
@@ -37,8 +37,11 @@ curl -fsSL -o "$tmp/silero_vad.onnx" https://github.com/k2-fsa/sherpa-onnx/relea
 echo "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6  $tmp/silero_vad.onnx" | sha256sum --strict -c - >/dev/null
 mv "$tmp/silero_vad.onnx" "$onnx"
 echo "put $onnx"
-mkdir -p app/resources/windows-amd64/vad
-cp "$onnx" app/resources/windows-amd64/vad/
-echo "put app/resources/windows-amd64/vad/silero_vad.onnx"
-scripts/package-licenses.sh darwin-arm64
-scripts/package-licenses.sh windows-amd64
+for platform in windows-amd64 linux-amd64; do
+	mkdir -p app/resources/$platform/vad
+	cp "$onnx" app/resources/$platform/vad/
+	echo "put app/resources/$platform/vad/silero_vad.onnx"
+done
+for platform in darwin-arm64 windows-amd64 linux-amd64; do
+	scripts/package-licenses.sh $platform
+done

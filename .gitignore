@@ -23,6 +23,7 @@ __pycache__/
 /app/tomoru-bench.exe
 /engine/asr/tomoru-asr.exe
 /engine/windows/tomoru-engine.exe
+/engine/linux/tomoru-engine
 *.test
 *.prof
 *.out

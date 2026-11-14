@@ -41,7 +41,7 @@ func (s *Settings) about(c *ui.Context) {
 		})
 		if path := s.core.LogPath(); path != "" {
 			kit.SettingRow(c, 2, locales.AboutLogs(), "", func() {
-				if kit.Button(c, kit.Plain, kit.Small, nil, shared.OnWindows(locales.ShowInFinder(), locales.ShowInExplorer())).Clicked() {
+				if kit.Button(c, kit.Plain, kit.Small, nil, shared.OnEach(locales.ShowInFinder(), locales.ShowInExplorer(), locales.ShowInFolder())).Clicked() {
 					mygo.Shell.ShowItemInFolder(path)
 				}
 			})

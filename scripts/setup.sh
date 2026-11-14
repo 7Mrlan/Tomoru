@@ -3,11 +3,12 @@
 # recognition, the voice detector and llama-server. Run it once, and again after changing engine/;
 # go tool mygo dev restarts the app when it finishes.
 #
-#	scripts/setup.sh [darwin-arm64 | windows-amd64]   (default: this computer's)
+#	scripts/setup.sh [darwin-arm64 | windows-amd64 | linux-amd64]   (default: this computer's)
 set -e
 cd "$(dirname "$0")"
 case $(uname -s) in
 MINGW* | MSYS*) platform=${1:-windows-amd64} ;;
+Linux) platform=${1:-linux-amd64} ;;
 *) platform=${1:-darwin-arm64} ;;
 esac
 case $platform in
@@ -16,6 +17,8 @@ darwin-arm64)
 	./build-asr.sh ;;
 windows-amd64)
 	./build-engine-windows.sh ;;
+linux-amd64)
+	./build-engine-linux.sh ;;
 *)
 	echo "unknown platform $platform" >&2
 	exit 2 ;;

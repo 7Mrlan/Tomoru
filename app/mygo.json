@@ -25,5 +25,12 @@
       "bin/llama-server": "entitlements/bundled-libraries.plist",
       "bin/tomoru-asr": "entitlements/bundled-libraries.plist"
     }
+  },
+  "linux": {
+    "webview": false,
+    "comment": "Live translated subtitles for anything you watch",
+    "formats": ["deb"],
+    "categories": ["AudioVideo", "Utility"],
+    "depends": ["libayatana-appindicator3-1", "libpulse0", "libgomp1", "libvulkan1", "libssl3 | libssl3t64"]
   }
 }

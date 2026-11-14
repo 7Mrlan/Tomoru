@@ -26,10 +26,11 @@ The release check still rejects a local `replace` of MyGo.
 
 ## Model and native-library provenance to retain
 
-- **ONNX Runtime:** both supplied sherpa-onnx v1.13.8 libraries identify version
-  1.28.2. This agrees with the pinned sherpa-onnx
-  [macOS](https://github.com/k2-fsa/sherpa-onnx/blob/11afbd009a7f8c08f4bcf2fc1b265d0df4670fbf/cmake/onnxruntime-osx-arm64.cmake)
-  and [Windows](https://github.com/k2-fsa/sherpa-onnx/blob/11afbd009a7f8c08f4bcf2fc1b265d0df4670fbf/cmake/onnxruntime-win-x64.cmake)
+- **ONNX Runtime:** the supplied sherpa-onnx v1.13.8 libraries of all three platforms
+  identify version 1.28.2. This agrees with the pinned sherpa-onnx
+  [macOS](https://github.com/k2-fsa/sherpa-onnx/blob/11afbd009a7f8c08f4bcf2fc1b265d0df4670fbf/cmake/onnxruntime-osx-arm64.cmake),
+  [Windows](https://github.com/k2-fsa/sherpa-onnx/blob/11afbd009a7f8c08f4bcf2fc1b265d0df4670fbf/cmake/onnxruntime-win-x64.cmake)
+  and [Linux](https://github.com/k2-fsa/sherpa-onnx/blob/11afbd009a7f8c08f4bcf2fc1b265d0df4670fbf/cmake/onnxruntime-linux-x86_64.cmake)
   build files. The full 1.28.2 upstream notice set is included.
 - **Silero ONNX:** identify it by the SHA-256 in `scripts/fetch-vad.sh`, also
   published in the sherpa-onnx `asr-models` release asset metadata. Do not label
@@ -50,7 +51,8 @@ The release check still rejects a local `replace` of MyGo.
   `8642541b255bfb5dc39cd351a178be09013a55d6`, and the platform archive hashes in
   `scripts/fetch-llama.sh`. Notices for identified vendored JSON, HTTP, image,
   subprocess, hashing (xxHash, rotate-bits; SHA-1 and SHA-256 are public domain)
-  and BoringSSL code are included, and on Windows LLVM's OpenMP runtime. Review the upstream release's
+  and BoringSSL code are included, and on Windows LLVM's OpenMP runtime. The Linux archive
+  uses the system's OpenSSL 3, GNU OpenMP and Vulkan loader, which are not copied. Review the upstream release's
   embedded web UI and other enabled build features for additional notices;
   this inventory is not an exhaustive SBOM of that upstream binary.
 - **Lucide:** the SVG files are from `lucide-static` 0.469.0, as each file's

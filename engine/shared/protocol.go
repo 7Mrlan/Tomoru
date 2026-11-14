@@ -1,4 +1,4 @@
-package main
+package shared
 
 import (
 	"bufio"
@@ -79,7 +79,7 @@ var out = struct {
 }{w: os.Stdout}
 
 // send writes a protocol object as a line of its own, at once.
-func send(e Event) {
+func Send(e Event) {
 	b, err := json.Marshal(e)
 	if err != nil {
 		log.Printf("protocol encoding: %v", err)
@@ -93,9 +93,9 @@ func send(e Event) {
 }
 
 // fail sends an error and exits: every error ends the command.
-func fail(code, format string, args ...any) {
+func Fail(code, format string, args ...any) {
 	msg := fmt.Sprintf(format, args...)
-	send(Event{Type: "error", Code: code, Message: msg})
+	Send(Event{Type: "error", Code: code, Message: msg})
 	log.Printf("error %s: %s", code, msg)
 	os.Exit(1)
 }

@@ -2,8 +2,8 @@
 
 [中文](development_zh.md)
 
-The repository holds three Go modules, `app`, `engine/asr` and `engine/windows`, and the
-`engine/mac` Swift package. Read the [architecture](architecture.md) first for who owns what; the
+The repository holds five Go modules, `app`, `engine/asr`, `engine/shared`, `engine/windows` and
+`engine/linux`, and the `engine/mac` Swift package. Read the [architecture](architecture.md) first for who owns what; the
 product's and UI's rules are in the [design system](design-system.md).
 
 ## Tools and running
@@ -46,7 +46,7 @@ those on the `PATH`:
 ```sh
 export PATH="$PATH:/c/Program Files/Go/bin:$PWD/app/resources/windows-amd64/bin"
 (cd engine/asr && go test ./...)
-(cd engine/windows && go test ./...)
+(cd engine/shared && go test ./...)
 scripts/check.sh go && scripts/test.sh go     # MSYS2's MinGW-w64 is the compiler they ask for
 pacman -S diffutils                            # once, for package-licenses.sh --release-check
 ```
@@ -70,6 +70,22 @@ The process-loopback API requires
 [Windows build 20348 or later](https://learn.microsoft.com/en-us/windows/win32/api/audioclientactivationparams/ns-audioclientactivationparams-audioclient_activation_params),
 so Windows 10 is not supported.
 
+Linux is in progress ([#39](https://github.com/ACAne0320/Tomoru/issues/39)): it hears all system
+sound and shows subtitles, and does not select a part of the screen yet. Its engine and tomoru-asr
+are built on Linux x64 (Ubuntu 22.04 or later, PipeWire or PulseAudio), which needs a C compiler,
+pkg-config, libpulse's headers and patchelf; running the app needs `libayatana-appindicator3-1`
+for its tray icon:
+
+```sh
+sudo apt install build-essential pkg-config libpulse-dev patchelf libayatana-appindicator3-1
+scripts/setup.sh                 # linux-amd64: tomoru-engine, tomoru-asr, the voice detector, llama-server
+cd app && go tool mygo build -platform linux/amd64
+```
+
+The output is in `app/build/linux-amd64/`: `tomoru` with `bin/`, `vad/` and `licenses/` beside it,
+a Debian package and a `tar.gz` with `install.sh`. On Linux the tray icon's click opens its menu,
+whose first item shows the panel.
+
 The build scripts put programs in `app/resources/<os>-<arch>/bin/`. Models users download go in
 the user data directory, or a "Tomoru Models" folder in a folder they choose in Settings, which moves them there; unit tests
 don't need them. The directories and the protocol are in the
@@ -90,9 +106,9 @@ Each takes the parts to run; with none it runs all this platform can (`ui` and `
 
 | | Part | What it runs |
 |---|---|---|
-| `check.sh` | `go` | The license inventory, `gofmt`; `go vet`, the linters of `.golangci.yml` and functions nothing reaches (`deadcode`) of the app for macOS and Windows and of the engines for this platform and Windows (mingw-w64 needed: `brew install mingw-w64`, `apt install gcc-mingw-w64-x86-64`); and the app's layering, platform and design rules. The linters are pinned in the script and built the first time into `~/.cache/tomoru-tools` |
+| `check.sh` | `go` | The license inventory, `gofmt`; `go vet`, the linters of `.golangci.yml` and functions nothing reaches (`deadcode`) of the app for macOS, Windows and Linux and of the engines for this platform and Windows (mingw-w64 needed: `brew install mingw-w64`, `apt install gcc-mingw-w64-x86-64`), the Linux engine on Linux only (`apt install libpulse-dev`); and the app's layering, platform and design rules. The linters are pinned in the script and built the first time into `~/.cache/tomoru-tools` |
 | | `swift` | A type check of the Swift engine, warnings as errors |
-| `test.sh` | `go` | The tests of the three Go modules but the UI's and the `core/coretest` desktop adapter, the benchmark's included |
+| `test.sh` | `go` | The tests of `app`, `engine/asr` and `engine/shared` but the UI's and the `core/coretest` desktop adapter, the benchmark's included |
 | | `ui` | The app's UI tests |
 | | `swift` | The Swift protocol checker against `protocol/fixtures.json`, and `HearerContract.swift`, which feeds synthetic PCM to the production hearer to check the silence limit and continuous timestamps without starting capture or a model |
 

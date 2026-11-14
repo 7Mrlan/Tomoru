@@ -18,9 +18,9 @@ notices, Silero VAD, the FluidInference model declaration, llama.cpp's
 identified bundled libraries, and the LLVM OpenMP runtime it ships on Windows. Optional upstream components may appear in these
 notice sets even when the selected build does not use them.
 
-The same notice set accompanies both platforms, so source attribution remains
+The same notice set accompanies every platform, so source attribution remains
 available without guessing which upstream object files a linker retained.
-System frameworks and system-installed DLLs are not copied into this directory.
+System frameworks and system-installed libraries are not copied into this directory.
 Models downloaded after installation have their own model cards and terms;
 they are not licensed by Tomoru's GPL or by this inventory.
 

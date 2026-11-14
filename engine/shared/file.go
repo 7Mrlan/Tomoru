@@ -1,4 +1,4 @@
-package main
+package shared
 
 import (
 	"encoding/binary"
@@ -31,12 +31,12 @@ func (f *FileSource) Start(feed func([]int16)) error {
 	if err != nil {
 		return fmt.Errorf("%s: %w", f.path, err)
 	}
-	log.Printf("file %s: %.1f s", filepath.Base(f.path), float64(len(f.samples))/rate)
+	log.Printf("file %s: %.1f s", filepath.Base(f.path), float64(len(f.samples))/Rate)
 	go func() {
 		started := time.Now()
 		var delivered int64
 		for range time.Tick(100 * time.Millisecond) {
-			due := int64(time.Since(started).Seconds() * rate)
+			due := int64(time.Since(started).Seconds() * Rate)
 			if due <= delivered {
 				continue
 			}
@@ -117,9 +117,9 @@ func decodeWAV(b []byte) ([]int16, error) {
 // resample makes samples at from Hz 16 kHz 16-bit: higher rates by averaging the samples each
 // one spans, which keeps most of what is over 8 kHz out; lower ones linearly. Enough for speech.
 func resample(x []float64, from float64) []int16 {
-	n := int(float64(len(x)) * rate / from)
+	n := int(float64(len(x)) * Rate / from)
 	out := make([]int16, n)
-	step := from / rate
+	step := from / Rate
 	for i := range out {
 		at := float64(i) * step
 		j := min(int(at), len(x)-1)
