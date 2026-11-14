@@ -23,6 +23,13 @@ var Fonts = []string{"system", "serif", "rounded"}
 // off at its top, faded as they are.
 const MaxShown = 10
 
+// MinTextOpacity and MinOlderOpacity are the least the text's and the older sentences' opacity
+// go, in percent: fainter, they could not be read.
+const (
+	MinTextOpacity  = 30
+	MinOlderOpacity = 20
+)
+
 // DefaultShortcut is the global shortcut at first: Option-Shift-T.
 const DefaultShortcut = "Alt+Shift+T"
 
@@ -55,6 +62,9 @@ type Prefs struct {
 	SrcSize, TgtSize float64
 	SrcColor         string
 	TgtColor         string
+	TextOpacity      float64 // in percent, the text's with its edge
+	BoxOpacity       float64 // in percent, the box's behind the text
+	OlderOpacity     float64 // in percent, the sentence above the newest's: those above it fade from it
 	HideAfter        float64 // seconds without speech before the subtitles go
 	KeepShown        bool    // the subtitles stay while nobody speaks, rather than going after HideAfter
 	Locked           bool
@@ -218,6 +228,7 @@ func (p *Prefs) ResetStyle() {
 	p.Style, p.Edge, p.EdgeColor, p.TgtFirst = 1, 1, "#1e2259", false
 	p.Font, p.SrcSize, p.TgtSize = Fonts[0], 20, 28
 	p.SrcColor, p.TgtColor, p.HideAfter, p.KeepShown = "#ffffff", "#7fdbff", 5, false
+	p.TextOpacity, p.BoxOpacity, p.OlderOpacity = 100, 62, 54
 }
 
 // Load reads the settings at path over the defaults for locale. A missing file gives the
@@ -239,6 +250,9 @@ func (p *Prefs) Normalize(d Prefs) { p.fix(d) }
 
 func (p *Prefs) fix(d Prefs) {
 	p.Shown = min(max(p.Shown, 1), MaxShown)
+	p.TextOpacity = min(max(p.TextOpacity, MinTextOpacity), 100)
+	p.BoxOpacity = min(max(p.BoxOpacity, 0), 100)
+	p.OlderOpacity = min(max(p.OlderOpacity, MinOlderOpacity), 100)
 	if p.Display < DisplayBoth || p.Display > DisplaySrc {
 		p.Display = d.Display
 	}

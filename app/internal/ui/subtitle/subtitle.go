@@ -220,6 +220,7 @@ func Draw(c *ui.Context, entries []Entry, p prefs.Prefs, k, width, bareBelow flo
 	align := Align(p)
 	band := p.Style == 0
 	cjk := lang.CJK(p.Src)
+	opacity := float32(p.TextOpacity) / 100
 	for i, e := range entries {
 		age := len(entries) - 1 - i
 		roll := ui.ElementTransition{
@@ -231,7 +232,9 @@ func Draw(c *ui.Context, entries []Entry, p prefs.Prefs, k, width, bareBelow flo
 		sentence := ui.Column(c.Key(e.Key)).Transition(roll)
 		fade := float32(1)
 		if age > 0 {
-			fade = max(.25, .62-.08*float32(age)) // .54, .46, … down to a quarter
+			// The one above the newest as the user chose, those above it fainter, down to not
+			// quite half of it: by default .54, .46, … down to a quarter.
+			fade = float32(p.OlderOpacity) / 100 * max(.46, 1-.15*float32(age-1))
 		}
 		sentence.Opacity(sentence.Animate("fade", fade, 320*time.Millisecond))
 		b := sentence.Bounds()
@@ -251,7 +254,7 @@ func Draw(c *ui.Context, entries []Entry, p prefs.Prefs, k, width, bareBelow flo
 			if band {
 				bg := ui.RGBA(0, 0, 0, 0)
 				if boxed {
-					bg = ui.RGBA(0, 0, 0, .62)
+					bg = ui.RGBA(0, 0, 0, float32(p.BoxOpacity)/100)
 				}
 				lines = lines.Background(bg).Radius(8*k).Padding(6*k, 14*k).Transition(Follows)
 			}
@@ -260,18 +263,17 @@ func Draw(c *ui.Context, entries []Entry, p prefs.Prefs, k, width, bareBelow flo
 					if e.Src == "" || p.Display == prefs.DisplayTgt {
 						return
 					}
-					text, col := e.Src, hex(p.SrcColor, ui.RGBA(255, 255, 255, 1))
-					n := 2
+					text, n, dim := e.Src, 2, float32(1)
 					if p.Display == prefs.DisplaySrc && age == 0 {
 						n = 3 // the newest, as its translation would have
 					}
 					if e.Pending {
 						// Still being recognized: one line that rolls, as live captions do, rather
-						// than a second line opening and filling word by word.
-						col, n = ui.Hex("#cdcdcd"), 1
+						// than a second line opening and filling word by word, a little faint.
+						n, dim = 1, .8
 						text = fitTail(c, p, text, float32(p.SrcSize)*k, width-36*k, cjk)
 					}
-					line(c, p, text, p.Src, float32(p.SrcSize)*k, col, n)
+					line(c, p, text, p.Src, float32(p.SrcSize)*k, hex(p.SrcColor, ui.RGBA(255, 255, 255, 1)), n).Opacity(dim * opacity)
 				}
 				tgt := func() {
 					if e.Tgt == "" || p.Display == prefs.DisplaySrc {
@@ -289,12 +291,14 @@ func Draw(c *ui.Context, entries []Entry, p prefs.Prefs, k, width, bareBelow flo
 					if e.Swaps {
 						t.ContentTransition(swap)
 					}
+					dim := float32(1)
 					switch {
 					case e.DimTgt:
-						t.Opacity(.5)
+						dim = .5
 					case e.Draft:
-						t.Opacity(.72) // a draft, until the sentence ends
+						dim = .72 // a draft, until the sentence ends
 					}
+					t.Opacity(dim * opacity)
 				}
 				if p.TgtFirst {
 					tgt()

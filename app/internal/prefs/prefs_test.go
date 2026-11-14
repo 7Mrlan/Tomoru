@@ -43,6 +43,11 @@ func TestLoad(t *testing.T) {
 	if got.Src != "en" || got.Tgt != "zh" || got.Shown != MaxShown || got.Font != "system" || got.MT != "custom:gone" {
 		t.Errorf("%+v", got)
 	}
+	// Opacity past its range is set right; settings from before it take the defaults.
+	os.WriteFile(path, []byte(`{"TextOpacity": 5, "BoxOpacity": 120}`), 0o644)
+	if got, _ = Load(path, "en"); got.TextOpacity != MinTextOpacity || got.BoxOpacity != 100 || got.OlderOpacity != 54 {
+		t.Errorf("opacity %v %v %v", got.TextOpacity, got.BoxOpacity, got.OlderOpacity)
+	}
 	// A family of the system's stays, installed or not: the subtitles fall back to the system's.
 	os.WriteFile(path, []byte(`{"Font": "Comic Sans MS"}`), 0o644)
 	if got, _ = Load(path, "en"); got.Font != "Comic Sans MS" {

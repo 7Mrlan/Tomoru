@@ -60,7 +60,7 @@ func TestCustomColor(t *testing.T) {
 	k := coretest.New()
 	s := New(k, &coretest.Nav{})
 	s.Tab = "subtitles"
-	tt := ui.NewTester(s.View, Width, 1400)
+	tt := ui.NewTester(s.View, Width, 1600)
 	if tt.HasText(locales.SrcColor()) {
 		t.Error("custom colors with a scheme chosen")
 	}

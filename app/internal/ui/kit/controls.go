@@ -37,18 +37,18 @@ func Swatches(c *ui.Context, v *string, colors []string) {
 	})
 }
 
-// Slider sets *v from lo to hi in whole steps, named label, its value after it at the end: a
-// subtitle's size. Grown, as in a Control, the track takes the room. In a disabled row
-// (SettingRowOff) it fades.
-func Slider(c *ui.Context, v *float64, lo, hi float64, label string) ui.Element {
+// Slider sets *v from lo to hi in whole steps, named label, its value and unit after it at the
+// end: a subtitle's size, or its opacity in "%". Grown, as in a Control, the track takes the room.
+// In a disabled row (SettingRowOff) it fades.
+func Slider(c *ui.Context, v *float64, lo, hi float64, unit, label string) ui.Element {
 	row := ui.Row(c).Gap(Space(2)).AlignItems(ui.Center)
 	if row.IsDisabled() {
 		row = row.Opacity(offOpacity)
 	}
 	return row.Children(func() {
 		ui.Slider(c, v, lo, hi).Step(1).Grow(1).Label(label)
-		ui.Text(c, strconv.Itoa(int(*v))).FontSize(TextControl).FontWeight(WeightBold).FontFeatures(Tabular).
-			TextColor(Colors(c).InkMuted).MinWidth(Space(6)).TextAlign(ui.End)
+		ui.Text(c, strconv.Itoa(int(*v))+unit).FontSize(TextControl).FontWeight(WeightBold).FontFeatures(Tabular).
+			TextColor(Colors(c).InkMuted).MinWidth(Space(10)).TextAlign(ui.End) // "100%": the tracks of a card end together
 	})
 }
 

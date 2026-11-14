@@ -347,9 +347,9 @@ func (o *Overlay) View(c *ui.Context) {
 // tried again. The eye is there, and the menu bar may hide the icon behind the notch. Listening
 // with nobody speaking shows nothing.
 // hoverShade is the hovered block's background, and the toolbar's over it: the closed-caption
-// bands, now the block's, or for immersive subtitles a lighter one, only to grab the block by. On
-// glass where the system has it, which shows what plays under it, lighter: only for the text to
-// read on.
+// bands, now the block's, though no lighter than the immersive's, or for immersive subtitles a
+// lighter one, only to grab the block by. On glass where the system has it, which shows what plays
+// under it, lighter: only for the text to read on.
 func hoverShade(p prefs.Prefs) ui.Color {
 	shade := float32(1)
 	if hasGlass() {
@@ -358,7 +358,7 @@ func hoverShade(p prefs.Prefs) ui.Color {
 	if p.Style == 1 {
 		return ui.RGBA(10, 10, 14, .42*shade)
 	}
-	return ui.RGBA(0, 0, 0, .62*shade)
+	return ui.RGBA(0, 0, 0, max(.42, float32(p.BoxOpacity)/100)*shade)
 }
 
 func (o *Overlay) notice(c *ui.Context) string {
