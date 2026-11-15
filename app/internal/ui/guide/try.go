@@ -205,7 +205,7 @@ func (g *Guide) tryIntro(c *ui.Context, src string, saying bool) {
 		why := shared.ErrorText(err)
 		var e *engine.Error
 		if errors.As(err, &e) && e.Code == "no-voice" {
-			why = shared.OnWindows(locales.SampleNoVoice(src), locales.SampleNoVoiceWin(src))
+			why = shared.OnEach(locales.SampleNoVoice(src), locales.SampleNoVoiceWin(src), locales.SampleNoVoiceLinux(src))
 		}
 		kit.Warning(c, why)
 	}

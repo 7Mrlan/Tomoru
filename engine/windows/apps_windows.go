@@ -11,6 +11,8 @@ import (
 	"unsafe"
 
 	"golang.org/x/sys/windows"
+
+	"tomoru-engine-shared"
 )
 
 // shell are the programs of Windows's own that have windows but nothing to hear on their own.
@@ -81,7 +83,7 @@ func listApps() {
 		return strings.Compare(strings.ToLower(a.name), strings.ToLower(b.name))
 	})
 	for _, a := range apps {
-		send(Event{Type: "app", ID: a.id, Name: a.name, Playing: a.playing})
+		shared.Send(shared.Event{Type: "app", ID: a.id, Name: a.name, Playing: a.playing})
 	}
 }
 

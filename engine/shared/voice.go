@@ -1,4 +1,4 @@
-package main
+package shared
 
 import (
 	"fmt"
@@ -52,7 +52,7 @@ func (d *Detector) Feed(samples []float32) {
 			if !on {
 				run = voiceOff
 			}
-			d.onChange(on, float64(max(0, d.samples-run))/rate)
+			d.onChange(on, float64(max(0, d.samples-run))/Rate)
 		}
 	}
 }
@@ -76,10 +76,10 @@ func newSilero(model string) (*silero, error) {
 	if _, err := os.Stat(model); err != nil {
 		return nil, err
 	}
-	c := sherpa.VadModelConfig{SampleRate: rate, NumThreads: 1, Provider: "cpu"}
+	c := sherpa.VadModelConfig{SampleRate: Rate, NumThreads: 1, Provider: "cpu"}
 	// sherpa-onnx counts a run from its first window's end: a window short of the run.
-	c.SileroVad = sherpa.SileroVadModelConfig{Model: model, Threshold: .5, MinSpeechDuration: float32(voiceOn-window) / rate,
-		MinSilenceDuration: float32(voiceOff-window) / rate, WindowSize: window, MaxSpeechDuration: 3600}
+	c.SileroVad = sherpa.SileroVadModelConfig{Model: model, Threshold: .5, MinSpeechDuration: float32(voiceOn-window) / Rate,
+		MinSilenceDuration: float32(voiceOff-window) / Rate, WindowSize: window, MaxSpeechDuration: 3600}
 	v := sherpa.NewVoiceActivityDetector(&c, 60)
 	if v == nil {
 		return nil, fmt.Errorf("sherpa-onnx could not load %s", model)

@@ -31,8 +31,8 @@ platform engine tomoru-engine        app: asr/batch (since 2026-10-31)          
   (`result`, `voice`, `clock`), so the segmenter, translation and replay tests need no change.
   Until 2026-10-31 tomoru-asr did all of it itself, with a VAD of its own; it moved to the app so
   that other models share it ([recognition](recognition.md)).
-- The Windows engine (`engine/windows`) implements only hearing and `--asr none`, and reuses
-  `tomoru-asr` for recognition; a Linux engine would do the same.
+- The Windows and Linux engines (`engine/windows`, `engine/linux`) implement only hearing and
+  `--asr none`, and reuse `tomoru-asr` for recognition.
 
 ## How a local model streams
 

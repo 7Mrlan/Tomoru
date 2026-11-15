@@ -44,7 +44,9 @@ jobs:
           cache-dependency-path: |
             app/go.sum
             engine/asr/go.sum
+            engine/shared/go.sum
             engine/windows/go.sum
+            engine/linux/go.sum
       - run: scripts/test.sh go --race
 
   macos:

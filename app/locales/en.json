@@ -2425,13 +2425,35 @@
       }
     }
   },
+  "openPanel": "Show Panel",
+  "@openPanel": {
+    "description": "In the tray icon's menu, on Linux, where clicking the icon opens its menu: shows the panel, which changes languages and what to hear."
+  },
+  "sampleNoVoiceLinux": "Tomoru can't say the sample on Linux yet. Play a video in {language} instead.",
+  "@sampleNoVoiceLinux": {
+    "description": "Guide, try step, on Linux, which has no voice for the app to say the sample with.",
+    "placeholders": {
+      "language": {
+        "type": "String",
+        "example": "Japanese"
+      }
+    }
+  },
   "guideReadyTray": "Click Tomoru's icon in the corner of the taskbar to change languages and what to hear; right-click it to start translating or open settings. If it isn't there, it's under ^.",
   "@guideReadyTray": {
     "description": "Guide, last step, on Windows: where the app is afterwards."
   },
+  "guideReadyLinux": "Click Tomoru's icon in the top bar or the system tray to start translating or open settings; Show Panel changes languages and what to hear.",
+  "@guideReadyLinux": {
+    "description": "Guide, last step, on Linux: where the app is afterwards. Show Panel is openPanel, as the menu says it."
+  },
   "showInExplorer": "Show in File Explorer",
   "@showInExplorer": {
     "description": "Button of a session kept, on Windows: shows its file in File Explorer."
+  },
+  "showInFolder": "Show in Folder",
+  "@showInFolder": {
+    "description": "Button of a session kept, on Linux: shows its file in the file manager."
   },
   "engineNone": "None yet",
   "@engineNone": {

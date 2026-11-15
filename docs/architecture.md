@@ -27,7 +27,9 @@ see [ADR 001](adr/001-state-events-and-runtime-boundaries.md).
 | `app/internal/ui/{guide,settings,panel,overlay,imagecard}/` | The surfaces; they don't import each other, and share kit, shared and subtitle |
 | `app/cmd/tomoru-bench/` | The benchmark's command line, cases, session recording, reference subtitles and WAV handling, a file each |
 | `engine/mac/` | The Swift engine: audio capture and Apple's recognition |
-| `engine/windows/` | Its own Go module (cgo): Windows audio capture (WASAPI endpoint loopback for the default playback device, process loopback for a selected app), voice detection, speaking and selecting a part of the screen; no recognition |
+| `engine/shared/` | Its own Go module: what the Go engines share, the protocol, the command line, hearing a source or a WAV file, and voice detection |
+| `engine/windows/` | Its own Go module (cgo): Windows audio capture (WASAPI endpoint loopback for the default playback device, process loopback for a selected app), speaking and selecting a part of the screen; no recognition |
+| `engine/linux/` | Its own Go module (cgo): hearing the default output's monitor through PulseAudio's API, which PipeWire serves too; no recognition, and no speaking, apps or selecting yet |
 | `engine/asr/` | Its own Go module: `tomoru-asr`, which decodes stretches of speech with a downloaded model |
 | `protocol/fixtures.json` | Wire fixtures shared by the three protocol implementations |
 | `bench/` | Cases, scoring and benchmark material; run output stays out of the source |
@@ -132,13 +134,15 @@ overlay's pointer watching uses a ticker that can be stopped. The model server's
 identity requests are bound to a context and have a per-request timeout; stopped child processes
 are reaped.
 
-Platform differences live only at the edges: the engine process (Swift on macOS, Go on Windows);
+Platform differences live only at the edges: the engine process (Swift on macOS, Go on Windows and Linux);
 `capture` (selecting a part of the screen always goes through the engine's `select`, which reports
 where the selection was: on macOS it runs the system's `screencapture`, on Windows its own
-selection window); `resource.Hide` (no console window for child processes on Windows); the tray
-icon (tinted for light and dark on Windows; on both macOS and Windows, a click opens the panel and
-a right click opens the system menu); and a little platform wording (`ui/shared.OnWindows`). Windows has no
-system recognizer, so at first no recognition is chosen (`prefs.DefaultASR` is empty and starting
+selection window; Linux's selects nothing yet); `resource.Hide` (no console window for child
+processes on Windows); the tray icon (tinted for light and dark on Windows; on both macOS and
+Windows, a click opens the panel and a right click opens the system menu; on Linux a click opens
+the menu, which shows the panel, as AppIndicator tells no clicks); and a little platform wording
+(`ui/shared.OnWindows` and `OnEach`). Windows and Linux have no system recognizer, so at first no
+recognition is chosen (`prefs.DefaultASR` is empty and starting
 reports `core.ErrNoASR`); the user picks a local model (downloaded only once chosen) or cloud
 recognition in the guide or Settings, and the guide skips the permission step (`core.AsksAccess`).
 

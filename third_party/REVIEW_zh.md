@@ -22,9 +22,10 @@ MyGo 的本地 `replace`。
 
 ## 需要保留的模型和原生库来源
 
-- **ONNX Runtime：** sherpa-onnx v1.13.8 提供的两个平台动态库都标识为 1.28.2，与其固定的
-  [macOS](https://github.com/k2-fsa/sherpa-onnx/blob/11afbd009a7f8c08f4bcf2fc1b265d0df4670fbf/cmake/onnxruntime-osx-arm64.cmake)
-  和 [Windows](https://github.com/k2-fsa/sherpa-onnx/blob/11afbd009a7f8c08f4bcf2fc1b265d0df4670fbf/cmake/onnxruntime-win-x64.cmake)
+- **ONNX Runtime：** sherpa-onnx v1.13.8 提供的三个平台动态库都标识为 1.28.2，与其固定的
+  [macOS](https://github.com/k2-fsa/sherpa-onnx/blob/11afbd009a7f8c08f4bcf2fc1b265d0df4670fbf/cmake/onnxruntime-osx-arm64.cmake)、
+  [Windows](https://github.com/k2-fsa/sherpa-onnx/blob/11afbd009a7f8c08f4bcf2fc1b265d0df4670fbf/cmake/onnxruntime-win-x64.cmake)
+  和 [Linux](https://github.com/k2-fsa/sherpa-onnx/blob/11afbd009a7f8c08f4bcf2fc1b265d0df4670fbf/cmake/onnxruntime-linux-x86_64.cmake)
   构建文件一致。清单保存了 1.28.2 完整的上游第三方声明。
 - **Silero ONNX：** 用 `scripts/fetch-vad.sh` 的 SHA-256 标识该文件；sherpa-onnx
   `asr-models` 的发布资产元数据也给出这一哈希。不要因为另一份 Core ML 模型基于 v6，就把此
@@ -39,7 +40,8 @@ MyGo 的本地 `replace`。
 - **llama.cpp：** 记录 `b11960`（v0.8.0）、commit `8642541b255bfb5dc39cd351a178be09013a55d6`
   以及 `scripts/fetch-llama.sh` 的平台归档哈希。清单包含已识别的 JSON、HTTP、图片、
   子进程、哈希（xxHash、rotate-bits；SHA-1 和 SHA-256 属公有领域）和 BoringSSL 组件声明，
-  以及 Windows 上 LLVM 的 OpenMP 运行库。仍需检查上游发布包内嵌的网页 UI 及其他启用功能是否有
+  以及 Windows 上 LLVM 的 OpenMP 运行库。Linux 归档使用系统的 OpenSSL 3、GNU OpenMP 和 Vulkan
+  加载器，不复制这些库。仍需检查上游发布包内嵌的网页 UI 及其他启用功能是否有
   附加声明；本清单不是该上游二进制的完整 SBOM。
 - **Lucide：** SVG 来自 `lucide-static` 0.469.0（每个文件头部都写着）；该版本的上游
   LICENSE 放在 SVG 旁边和 `lucide.txt` 中，另附 Feather MIT 声明。更新图标时换成同一版本的声明。

@@ -9,7 +9,7 @@
 - **stdin** 承载 app 发来的命令，每行一个 JSON 对象。stdin 关闭时引擎退出，所以即使 app 崩溃，引擎也不会比它活得久。
 - 每个对象都有 `type`。双方都忽略不认识的类型和字段，所以任何一方都可以加字段而不破坏另一方。
 
-macOS 引擎是 `engine/mac`（Swift：Core Audio tap + SpeechAnalyzer），构建为 `tomoru-engine`，放进 `app/resources/darwin-arm64/bin/`。Windows 引擎是 `engine/windows`（Go，调用 Windows 的部分用 C：WASAPI 设备与进程环回、SAPI，以及自己的框选窗口），由 `scripts/build-engine-windows.sh` 构建为 `tomoru-engine.exe`，放进 `app/resources/windows-amd64/bin/`。Windows 没有给应用用的语音识别，所以它只收听：`listen` 必须带 `--asr none`，`prepare` 以 `unsupported-locale` 失败。
+macOS 引擎是 `engine/mac`（Swift：Core Audio tap + SpeechAnalyzer），构建为 `tomoru-engine`，放进 `app/resources/darwin-arm64/bin/`。Windows 引擎是 `engine/windows`（Go，调用 Windows 的部分用 C：WASAPI 设备与进程环回、SAPI，以及自己的框选窗口），由 `scripts/build-engine-windows.sh` 构建为 `tomoru-engine.exe`，放进 `app/resources/windows-amd64/bin/`。Linux 引擎是 `engine/linux`（Go，调用 PulseAudio API 的部分用 C：默认输出的监听源，PipeWire 也提供这套 API），由 `scripts/build-engine-linux.sh` 构建为 `tomoru-engine`，放进 `app/resources/linux-amd64/bin/`；暂不支持朗读、列出应用和框选。两个 Go 引擎共用 `engine/shared`：协议、命令行、收听和人声检测。Windows 和 Linux 没有给应用用的语音识别，所以它们的引擎只收听：`listen` 必须带 `--asr none`，`prepare` 以 `unsupported-locale` 失败。
 
 用下载的模型识别不属于平台：app 按引擎的 `voice` 事件，把平台引擎用 `listen --asr none` 听到的音频切成一段段语音，由 `tomoru-asr`（`engine/asr`，Go + sherpa-onnx，各平台相同）逐段解码（见下文「tomoru-asr」和[识别适配层](recognition_zh.md)）。app 用和自己会识别的引擎相同的事件报告识别结果。云端识别（`app/internal/asr/qwencloud`，阿里云百炼的 Qwen ASR）在 app 里接收同样的 `audio`，用同样的事件报告。
 
@@ -179,7 +179,7 @@ tomoru-asr serve --model <dir> --lang <zh|en|ja|ko|yue> [--threads <n>]   解码
 
 `protocol/fixtures.json` 是共享的 v1 契约：合法的生产者记录、握手失败、可选的 token 时间、空的定稿结果、音频时钟、时间零点的 voice-off、向前兼容的字段和事件、出错终止，以及 stdin 命令。两个 Go module 在协议测试里加载它。ASR 的测试还验证 EOF 时的冲刷和格式错误的输入；app 的测试启动真实的子进程，验证正常 EOF、强制关闭、写入阻塞和协议失败。
 
-Windows 引擎的测试（`engine/windows`，在任何电脑上都能运行）用同样的 fixtures 检查它的生产者和命令读取。
+Go 引擎的测试（`engine/shared`，在任何电脑上都能运行）用同样的 fixtures 检查它们的生产者和命令读取。
 
 Swift 验证器把生产代码的 `Protocol.swift` 和 `engine/mac/Tests/ProtocolContract.swift` 一起编译。它用同样的 fixtures 检查有类型的生产者构造函数，并经过生产代码的命令解码器测试 stdin EOF。它只需要 Foundation，不需要音频权限或下载的模型。仓库的检查命令运行这个验证器，并构建完整的 macOS 引擎，从而检查所有协议调用点。
 

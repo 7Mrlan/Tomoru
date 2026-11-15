@@ -36,15 +36,17 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - name: Install the Windows C compiler, to vet the engines' cgo
-        run: sudo apt-get update && sudo apt-get install -y gcc-mingw-w64-x86-64
+      - name: Install the Windows C compiler and libpulse's headers, to vet the engines' cgo
+        run: sudo apt-get update && sudo apt-get install -y gcc-mingw-w64-x86-64 libpulse-dev
       - uses: actions/setup-go@v5
         with:
           go-version-file: app/go.mod
           cache-dependency-path: |
             app/go.sum
             engine/asr/go.sum
+            engine/shared/go.sum
             engine/windows/go.sum
+            engine/linux/go.sum
       - name: Keep the linters check.sh builds
         uses: actions/cache@v4
         with:

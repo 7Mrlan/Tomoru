@@ -3,7 +3,9 @@
 go:
   - app/**
   - engine/asr/**
+  - engine/shared/**
   - engine/windows/**
+  - engine/linux/**
   - protocol/**
 ui:
   - app/**

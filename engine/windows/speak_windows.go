@@ -10,6 +10,8 @@ import (
 	"unsafe"
 
 	"golang.org/x/sys/windows"
+
+	"tomoru-engine-shared"
 )
 
 // speak says lines aloud with the system's voice for locale, through the default output, where
@@ -20,18 +22,18 @@ func speak(locale string, lines []string) {
 	var name [256]uint16
 	switch hr := C.tc_speak_open(wide(locale), (*C.wchar_t)(unsafe.Pointer(&name[0])), C.int(len(name))); {
 	case hr == 1:
-		fail("no-voice", "no voice for %s", locale)
+		shared.Fail("no-voice", "no voice for %s", locale)
 	case hr < 0:
-		fail("internal", "SAPI: %v", hresult(hr))
+		shared.Fail("internal", "SAPI: %v", hresult(hr))
 	}
 	log.Printf("speaking with %s", windows.UTF16ToString(name[:]))
-	send(Event{Type: "state", State: "speaking"})
+	shared.Send(shared.Event{Type: "state", State: "speaking"})
 	for i, line := range lines {
 		if i > 0 {
 			time.Sleep(600 * time.Millisecond)
 		}
 		if hr := C.tc_speak(wide(line)); hr < 0 {
-			fail("internal", "SAPI: %v", hresult(hr))
+			shared.Fail("internal", "SAPI: %v", hresult(hr))
 		}
 	}
 }

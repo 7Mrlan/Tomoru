@@ -42,7 +42,7 @@ if [ "$go" = 1 ]; then
         packages=$(go list ./internal/... ./cmd/... | awk '!/^tomoru\/internal\/ui\// && !/^tomoru\/internal\/core\/coretest($|\/)/')
         go test -count=1 $race $packages
     )
-    for m in engine/asr engine/windows; do
+    for m in engine/asr engine/shared; do
         (cd "$root/$m" && go test -count=1 $race ./...)
     done
 fi

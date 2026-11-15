@@ -19,10 +19,11 @@ import (
 
 // Shell is the UI. It is used on the main thread.
 type Shell struct {
-	core    *core.Core
-	tray    *mygo.Tray
-	trayOn  bool
-	overlay *overlay.Overlay
+	core      *core.Core
+	tray      *mygo.Tray
+	trayOn    bool
+	trayItems string // what the menu setTrayMenu last set shows, where the icon only has its menu
+	overlay   *overlay.Overlay
 
 	shortcut      string // the global shortcut registered, "" for none
 	imageShortcut string // the picture's
@@ -46,9 +47,14 @@ func New(k *core.Core) *Shell {
 	}
 	s.tray = tray
 	// A click opens the panel, Tomoru's own, what one changes while watching; the right button the
-	// system's menu, as the icons of the menu bar and of Windows' taskbar have it.
-	tray.OnClick(s.togglePanel)
-	tray.OnRightClick(s.openTrayMenu)
+	// system's menu, as the icons of the menu bar and of Windows' taskbar have it. On Linux a click
+	// opens the menu, which shows the panel.
+	if menuOnly {
+		s.setTrayMenu()
+	} else {
+		tray.OnClick(s.togglePanel)
+		tray.OnRightClick(s.openTrayMenu)
+	}
 	if err := s.SetShortcut(k.Preferences().Shortcut); err != nil {
 		log.Println("shortcut:", err)
 	}
@@ -87,6 +93,9 @@ func (s *Shell) redraw() {
 			icon = assets.TrayOn
 		}
 		s.tray.SetIcon(trayIcon(icon))
+	}
+	if menuOnly {
+		s.setTrayMenu()
 	}
 	for _, w := range []*mygo.Window{s.panel, s.image, s.settings, s.guide} {
 		if w != nil {

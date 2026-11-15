@@ -18,7 +18,7 @@ check_sources() {
 }
 
 usage() {
-    echo "Usage: scripts/package-licenses.sh --check | [--release-check] <darwin-arm64|windows-amd64>" >&2
+    echo "Usage: scripts/package-licenses.sh --check | [--release-check] <darwin-arm64|windows-amd64|linux-amd64>" >&2
     exit 2
 }
 
@@ -29,7 +29,7 @@ case ${1:-} in
 esac
 [ "$#" -eq 1 ] || usage
 platform=$1
-case $platform in darwin-arm64|windows-amd64) ;; *) usage ;; esac
+case $platform in darwin-arm64|windows-amd64|linux-amd64) ;; *) usage ;; esac
 check_sources
 dest="$root/app/resources/$platform/licenses"
 

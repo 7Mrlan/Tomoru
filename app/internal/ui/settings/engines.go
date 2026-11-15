@@ -149,7 +149,7 @@ func (s *Settings) modelsFolder(c *ui.Context, dir string) {
 			return
 		}
 		ui.Row(c).Gap(kit.Space(2)).Shrink(0).Children(func() {
-			if kit.Button(c, kit.Plain, kit.Small, nil, shared.OnWindows(locales.ShowInFinder(), locales.ShowInExplorer())).Clicked() {
+			if kit.Button(c, kit.Plain, kit.Small, nil, shared.OnEach(locales.ShowInFinder(), locales.ShowInExplorer(), locales.ShowInFolder())).Clicked() {
 				mygo.Shell.ShowItemInFolder(dir)
 			}
 			if kit.Button(c, kit.Plain, kit.Small, nil, locales.ModelsFolderChange()).Clicked() {

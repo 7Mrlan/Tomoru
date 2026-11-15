@@ -180,7 +180,7 @@ func (s *Settings) record(c *ui.Context, r history.Record) {
 		if kit.Off(c, kit.Button(c, kit.Plain, kit.Small, assets.Sparkles, locales.LearnNames()), r.Lines == 0).Clicked() {
 			s.learnFrom([]string{r.Path}, r.Head.Scene)
 		}
-		if kit.Button(c, kit.Plain, kit.Small, nil, shared.OnWindows(locales.ShowInFinder(), locales.ShowInExplorer())).Clicked() {
+		if kit.Button(c, kit.Plain, kit.Small, nil, shared.OnEach(locales.ShowInFinder(), locales.ShowInExplorer(), locales.ShowInFolder())).Clicked() {
 			mygo.Shell.ShowItemInFolder(r.Path)
 		}
 		ui.Spacer(c)

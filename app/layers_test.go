@@ -214,13 +214,11 @@ func TestUIStateAccess(t *testing.T) {
 // A new one is a decision, made by changing this list.
 var platformFiles = []string{
 	"internal/asr/asr.go",
-	"internal/capture/capture_engine.go",
-	"internal/capture/capture_other.go",
 	"internal/core/feedback.go",
 	"internal/core/system.go",
 	"internal/history/history.go",
 	"internal/models/memory_darwin.go",
-	"internal/models/memory_other.go",
+	"internal/models/memory_linux.go",
 	"internal/models/memory_windows.go",
 	"internal/models/models.go",
 	"internal/models/space_unix.go",
@@ -235,6 +233,7 @@ var platformFiles = []string{
 	"internal/ui/overlay/window_other.go",
 	"internal/ui/overlay/window_windows.go",
 	"internal/ui/shared/platform.go",
+	"internal/ui/shell/tray.go",
 	"internal/ui/shell/tray_other.go",
 	"internal/ui/shell/tray_windows.go",
 }

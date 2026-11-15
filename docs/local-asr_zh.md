@@ -23,7 +23,7 @@
 
 - 平台引擎加 `--asr none`：不做识别，只发 `audio` 事件，没有声音时补静音，保证音频时间连续；另外发它的 Silero VAD 的 `voice` 事件。
 - app 的整段识别运行器（`app/internal/asr/batch`）按这些 `voice` 事件把语音切成段，交给 `tomoru-asr serve` 解码；它用引擎协议自己的事件（`result`、`voice`、`clock`）报告，所以断句器、翻译、回放测试都不用改。2026-10-31 之前这些都由 tomoru-asr 自己做，用它自己的 VAD；挪到 app 是为了让其他模型共用（[识别适配层](recognition_zh.md)）。
-- Windows 引擎（`engine/windows`）只实现收听和 `--asr none`，识别直接复用 `tomoru-asr`；以后的 Linux 引擎也一样。
+- Windows 和 Linux 引擎（`engine/windows`、`engine/linux`）只实现收听和 `--asr none`，识别直接复用 `tomoru-asr`。
 
 ## 本地模型的流式做法
 
