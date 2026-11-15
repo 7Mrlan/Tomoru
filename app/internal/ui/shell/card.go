@@ -21,7 +21,8 @@ const cardGap = 8
 // showImage shows the picture's card, unless it shows: a panel, which floats over every app and
 // takes the keyboard without making Tomoru the active app, and stays until it is closed, to be
 // moved by its title. It goes under the part of the screen selected, or over it, by what it
-// translates; for the clipboard's picture, by the menu bar icon (the taskbar's). It is as large as
+// translates; for the clipboard's picture, by the menu bar icon (the taskbar's), or in the
+// screen's middle when the icon tells no place. It is as large as
 // the user last resized it, as far as the screen has room; until they resize one, as tall as its
 // picture needs. It never resizes itself once shown.
 func (s *Shell) showImage() {
@@ -83,8 +84,12 @@ func cardSize(w, h int, work mygo.Rectangle) (int, int) {
 
 // cardPlace is where a card w by h goes by at, in work: under it, its left edge on at's, or its
 // middle on at's, centered; over it where work has no room under it and has over it. In work, as
-// far as it fits. above tells it went over.
+// far as it fits. above tells it went over. With no at, as a tray icon that tells no place (an
+// AppIndicator's), it goes in work's middle.
 func cardPlace(at mygo.Rectangle, centered bool, w, h int, work mygo.Rectangle) (x, y int, above bool) {
+	if at.Width == 0 && at.Height == 0 {
+		return work.X + (work.Width-w)/2, work.Y + (work.Height-h)/2, false
+	}
 	x = at.X
 	if centered {
 		x = at.X + at.Width/2 - w/2
