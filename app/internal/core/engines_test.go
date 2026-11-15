@@ -713,6 +713,10 @@ func TestRecognitionHints(t *testing.T) {
 	id := c.AddScene("只狼")
 	c.AddTerm(id, scene.Term{Src: "一心", Tgt: "一心"})
 	c.AddTerm(id, scene.Term{Src: "葦名", Tgt: "苇名", Auto: true})
+	c.AddTerm("", scene.Term{Src: "Claude", Tgt: "Claude"})
+	if h := c.hints(); h.Names != nil {
+		t.Fatalf("the general scene's names are hints: %+v", h) // they go with whatever is watched
+	}
 	c.SetScene(id)
 	if h := c.hints(); !slices.Equal(h.Names, []string{"一心", "葦名"}) {
 		t.Fatalf("hints %+v", h)

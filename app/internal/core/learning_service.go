@@ -46,10 +46,11 @@ type learningRequest struct {
 }
 
 type retranslationRequest struct {
-	Paths []string
-	Terms []scene.Term
-	Ready func(context.Context) (translate.Translator, error)
-	Err   error
+	Paths   []string
+	Terms   []scene.Term
+	General bool // the terms are the general scene's
+	Ready   func(context.Context) (translate.Translator, error)
+	Err     error
 }
 
 // LearningService owns learning and history retranslation. The facade supplies snapshots and
@@ -227,7 +228,7 @@ func (s *LearningService) startRetranslating(r retranslationRequest) {
 	}
 	op := newLearningOperation(s.work.ctx)
 	s.retranslating = op
-	glossary := scene.NewGlossary(r.Terms)
+	glossary := scene.NewGlossary(r.Terms, r.General)
 	s.work.Go(func() {
 		defer op.cancel()
 		type session struct {

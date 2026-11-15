@@ -17,7 +17,7 @@ the scene, and the next viewing uses them.
 | Item | Decision |
 |---|---|
 | Unit | The scene. Descriptions, glossaries, languages and history are kept per scene |
-| Default scene | "General", always first. Learning from its records asks where to add the names: General, an existing scene, or a new one |
+| Default scene | "General", always first. Its names go with whatever is watched, so they are only matched as said, for translation: recognition is not told them, and they have no misheard spellings ("cloud" heard for Claude in one video is "cloud" said in the next). Learning from its records adds the names to a new scene unless the user picks General or another one |
 | Scene description | Sent with each sentence to the translation model, and background for the LLM that scans; not to the on-device 2B model (it put the description's names in sentences that never mentioned them). See [the 2026-10-28 experiment](#experiment-2026-10-28-the-scene-description-in-the-translation-prompt) |
 | Languages | A scene keeps the language heard and the target language: switching to a scene switches languages, and changing languages in a scene saves them to it |
 | Learning | **Not while watching**: nothing pops up during viewing. Scanning happens only when the user chooses "Learn names" on the history; the results are listed as suggestions, all checked, added to the scene once confirmed, and can be undone. Unchecked ones are remembered and not suggested again |

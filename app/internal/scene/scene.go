@@ -91,6 +91,7 @@ const MaxTerms = 12
 // several goroutines.
 type Glossary struct {
 	entries []entry
+	general bool
 }
 
 type entry struct {
@@ -190,9 +191,11 @@ func normalize(s string) string {
 }
 
 // NewGlossary makes the glossary of terms: the user's own first, as they go before those learned
-// when a line concerns more than MaxTerms.
-func NewGlossary(terms []Term) *Glossary {
-	g := &Glossary{}
+// when a line concerns more than MaxTerms. The general scene's goes with whatever is watched, so it
+// only gives the terms of names said: recognition is not told them, and nothing heard is written
+// over, as a name misheard in one video is a word said right in the next ("cloud" for Claude).
+func NewGlossary(terms []Term, general bool) *Glossary {
+	g := &Glossary{general: general}
 	for _, own := range []bool{true, false} {
 		for _, t := range terms {
 			src, tgt := strings.TrimSpace(t.Src), strings.TrimSpace(t.Tgt)
@@ -201,7 +204,7 @@ func NewGlossary(terms []Term) *Glossary {
 			}
 			e := entry{tgt: tgt, src: newForm(src)}
 			for _, h := range t.Heard {
-				if h = strings.TrimSpace(h); h != src && Distinct(h) {
+				if h = strings.TrimSpace(h); h != src && Distinct(h) && !general {
 					e.heard = append(e.heard, newForm(h))
 				}
 			}
@@ -212,9 +215,9 @@ func NewGlossary(terms []Term) *Glossary {
 }
 
 // Names are the names of the glossary as said, the user's own first: what recognition is told to
-// expect. Nil for a nil glossary.
+// expect. Nil for a nil glossary, or the general scene's.
 func (g *Glossary) Names() []string {
-	if g == nil {
+	if g == nil || g.general {
 		return nil
 	}
 	names := make([]string, 0, len(g.entries))
