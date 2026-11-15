@@ -72,6 +72,8 @@ static void responded(GDBusConnection *bus, const char *sender, const char *path
 	g_main_loop_quit(a->loop);
 }
 
+static int stored(const char *app);
+
 // portal_file takes a picture of every screen through the Screenshot portal, without its own
 // interface, and returns the file it is in, which the caller removes, or NULL with the reason in
 // why. The desktop asks the user the first time, which GNOME does only while the app has the
@@ -111,9 +113,10 @@ static char *portal_file(const char *app, guint *code, char *why, int n) {
 	// however late, for a yes takes a picture that only the engine removes. Closing the request
 	// does not stop it: the portals answer nothing while their dialog is open.
 	g_main_loop_run(a.loop);
-	*code = a.code;
-	if (a.code != 0 || !a.uri) {
-		snprintf(why, n, a.code == 1 ? "the screenshot was not allowed" : "the desktop took no screenshot");
+	// A no comes as any other failure, 2, on GNOME and KDE: the no the portals keep tells it.
+	*code = a.code == 2 && stored(app) == TC_DENIED ? 1 : a.code;
+	if (*code != 0 || !a.uri) {
+		snprintf(why, n, *code == 1 ? "the screenshot was not allowed" : "the desktop took no screenshot");
 		goto out;
 	}
 	file = g_filename_from_uri(a.uri, NULL, NULL);
