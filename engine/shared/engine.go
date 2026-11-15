@@ -27,6 +27,10 @@ type Platform struct {
 	// Select has the user select a part of the screen and writes its picture to path, as PNG,
 	// and tells where it is; nil when cancelled, with nothing written.
 	Select func(path string) (*image.Rectangle, error)
+	// ScreenAccess tells whether the user lets the app take pictures of the screen, which
+	// selecting takes: "granted", "denied" or "unknown", having the system ask them first when
+	// request. Nil when the system asks no permission for it.
+	ScreenAccess func(request bool) string
 }
 
 // Run runs the command of the command line, as p does it: hearing only, for the system has no
@@ -44,8 +48,15 @@ func Run(p Platform) {
 	}
 	noASR := p.System + " has no speech recognition for apps"
 	switch cmd, args := os.Args[1], os.Args[2:]; cmd {
-	case "access", "request-access", "screen-access", "request-screen-access":
-		// The system asks no permission to hear what plays, nor to capture the screen.
+	case "screen-access", "request-screen-access":
+		state := "granted"
+		if p.ScreenAccess != nil {
+			state = p.ScreenAccess(cmd == "request-screen-access")
+		}
+		Send(Event{Type: "access", State: state})
+
+	case "access", "request-access":
+		// The system asks no permission to hear what plays.
 		Send(Event{Type: "access", State: "granted"})
 
 	case "apps":

@@ -78,7 +78,7 @@ if [ "$go" = 1 ]; then
     )
     # The engines need cgo: each is checked for this computer and for Windows, as far as it builds
     # there. The Windows engine builds for Windows only, and the Linux engine on Linux only, with
-    # libpulse's headers (apt install libpulse-dev).
+    # libpulse's and GTK 3's headers (apt install libpulse-dev libgtk-3-dev).
     for m in engine/asr engine/shared engine/windows engine/linux; do
         (
             cd "$root/$m"

@@ -78,7 +78,7 @@ func (g *Guide) pictureAsk(c *ui.Context) {
 		if kit.Off(c, kit.Button(c, kit.Primary, kit.Small, assets.Picture, label), k.ScreenAsking || k.Screen == "").AlignSelf(ui.Start).Clicked() {
 			k.RequestScreen()
 		}
-		note(c, locales.ScreenSelectWhy())
+		note(c, shared.OnEach(locales.ScreenSelectWhy(), locales.ScreenSelectWhy(), locales.ScreenSelectWhyLinux()))
 	}
 }
 

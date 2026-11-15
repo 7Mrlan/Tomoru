@@ -155,7 +155,7 @@ func (d *Card) allow(c *ui.Context) {
 				kit.GuideScreenRecording()
 			}
 		default:
-			kit.Caption(c, locales.ScreenSelectWhy()).TextAlign(ui.Center)
+			kit.Caption(c, shared.OnEach(locales.ScreenSelectWhy(), locales.ScreenSelectWhy(), locales.ScreenSelectWhyLinux())).TextAlign(ui.Center)
 			label := locales.ScreenSelectTurnOn()
 			if k.ScreenAsking {
 				label = locales.ScreenSelectAsking()

@@ -71,13 +71,13 @@ The process-loopback API requires
 so Windows 10 is not supported.
 
 Linux is in progress ([#39](https://github.com/ACAne0320/Tomoru/issues/39)): it hears all system
-sound and shows subtitles, and does not select a part of the screen yet. Its engine and tomoru-asr
+sound, shows subtitles, and selects a part of the screen to translate. Its engine and tomoru-asr
 are built on Linux x64 (Ubuntu 22.04 or later, PipeWire or PulseAudio), which needs a C compiler,
-pkg-config, libpulse's headers and patchelf; running the app needs `libayatana-appindicator3-1`
+pkg-config, libpulse's and GTK 3's headers and patchelf; running the app needs `libayatana-appindicator3-1`
 for its tray icon:
 
 ```sh
-sudo apt install build-essential pkg-config libpulse-dev patchelf libayatana-appindicator3-1
+sudo apt install build-essential pkg-config libpulse-dev libgtk-3-dev patchelf libayatana-appindicator3-1
 scripts/setup.sh                 # linux-amd64: tomoru-engine, tomoru-asr, the voice detector, llama-server
 cd app && go tool mygo build -platform linux/amd64
 ```
@@ -106,7 +106,7 @@ Each takes the parts to run; with none it runs all this platform can (`ui` and `
 
 | | Part | What it runs |
 |---|---|---|
-| `check.sh` | `go` | The license inventory, `gofmt`; `go vet`, the linters of `.golangci.yml` and functions nothing reaches (`deadcode`) of the app for macOS, Windows and Linux and of the engines for this platform and Windows (mingw-w64 needed: `brew install mingw-w64`, `apt install gcc-mingw-w64-x86-64`), the Linux engine on Linux only (`apt install libpulse-dev`); and the app's layering, platform and design rules. The linters are pinned in the script and built the first time into `~/.cache/tomoru-tools` |
+| `check.sh` | `go` | The license inventory, `gofmt`; `go vet`, the linters of `.golangci.yml` and functions nothing reaches (`deadcode`) of the app for macOS, Windows and Linux and of the engines for this platform and Windows (mingw-w64 needed: `brew install mingw-w64`, `apt install gcc-mingw-w64-x86-64`), the Linux engine on Linux only (`apt install libpulse-dev libgtk-3-dev`); and the app's layering, platform and design rules. The linters are pinned in the script and built the first time into `~/.cache/tomoru-tools` |
 | | `swift` | A type check of the Swift engine, warnings as errors |
 | `test.sh` | `go` | The tests of `app`, `engine/asr` and `engine/shared` but the UI's and the `core/coretest` desktop adapter, the benchmark's included |
 | | `ui` | The app's UI tests |

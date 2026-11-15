@@ -387,6 +387,7 @@
   "imageShortcut": "截图翻译",
   "shortcutDuplicate": "{keys} 已经用在另一个快捷键上",
   "screenSelectWhy": "需要屏幕录制权限，只截你框住的一块。",
+  "screenSelectWhyLinux": "需要截图权限。只翻译你选中的部分。",
   "screenSelectTurnOn": "开启一键框选",
   "screenSelectAsking": "等待系统询问…",
   "imageEngine": "引擎",

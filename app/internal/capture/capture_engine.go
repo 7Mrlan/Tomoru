@@ -11,7 +11,8 @@ import (
 
 // selectInto has the engine's selection write the part selected to path, as PNG: nothing when
 // cancelled, with Escape (on Windows, the right button too). The engine tells where the part is,
-// in the screens' pixels. Linux's selects nothing yet: it fails.
+// in the screens' pixels. Linux's selects over a screenshot, the Screenshot portal's under
+// Wayland.
 func selectInto(ctx context.Context, engine func() (string, error), path string) ([]byte, image.Rectangle, error) {
 	bin, err := engine()
 	if err != nil {
