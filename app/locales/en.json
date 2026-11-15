@@ -2027,6 +2027,10 @@
   "@screenSelectWhy": {
     "description": "Under screenSelect, and in the guide: what the permission is for."
   },
+  "screenSelectWhyLinux": "Needs permission to take screenshots. Only what you select is translated.",
+  "@screenSelectWhyLinux": {
+    "description": "screenSelectWhy on Linux, where the desktop asks whether the app may take screenshots: what the permission is for."
+  },
   "screenSelectTurnOn": "Turn on selecting",
   "@screenSelectTurnOn": {
     "description": "Button that asks for Screen Recording, to select a part of the screen."

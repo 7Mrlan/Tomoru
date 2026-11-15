@@ -18,9 +18,11 @@ The macOS engine is `engine/mac` (Swift: Core Audio tap + SpeechAnalyzer), built
 (Go, its calls into Windows in C: WASAPI's endpoint and process loopback, SAPI, and a window of its own to select
 a part of the screen), built as `tomoru-engine.exe` into `app/resources/windows-amd64/bin/` by
 `scripts/build-engine-windows.sh`. The Linux engine is `engine/linux` (Go, its calls into
-PulseAudio's API in C: the default output's monitor, which PipeWire serves too), built as
-`tomoru-engine` into `app/resources/linux-amd64/bin/` by `scripts/build-engine-linux.sh`; it does
-not speak, list apps or select yet. The two Go engines share `engine/shared`: the protocol, the
+PulseAudio's API and GTK in C: the default output's monitor, which PipeWire serves too, and a
+window of its own to select a part of the screen, over a screenshot that the Screenshot portal
+takes under Wayland and the engine under X11), built as `tomoru-engine` into
+`app/resources/linux-amd64/bin/` by `scripts/build-engine-linux.sh`; it does not speak or list
+apps yet. The two Go engines share `engine/shared`: the protocol, the
 command line, hearing and voice detection. Windows and Linux have no speech recognition for apps,
 so their engines only hear: `listen` needs `--asr none`, and `prepare` fails with
 `unsupported-locale`.
@@ -177,7 +179,13 @@ whether to start again.
 - `access` and `request-access` answer with one `access` object. Its `state` is `granted`,
   `denied`, or `unknown` (the user hasn't been asked yet). `screen-access` and
   `request-screen-access` answer the same way for Screen Recording, which selecting a part of the
-  screen to translate takes; the system counts the engine's permissions as the app's.
+  screen to translate takes; the system counts the engine's permissions as the app's. On Linux
+  under Wayland they answer for the desktop's permission to take screenshots, which the engine
+  asks for as the app, by its desktop entry's ID: `unknown` until the user allowed it, a no
+  included, since `request-screen-access` forgets a no and asks again; GNOME asks only while the
+  app has the focus. `request-screen-access` answers once the user did, however late: the
+  desktop asks by taking a screenshot, which the engine removes. Under X11 the answer is
+  `granted`.
 - `locales` sends one `locale` object per locale the system's recognition hears (macOS:
   `SpeechTranscriber.supportedLocales`), by BCP 47 tag, then exits; the app offers those languages
   to speak. Apple's `zh-HK` is Cantonese. `supportedLocale(equivalentTo:)` is no test of a locale:

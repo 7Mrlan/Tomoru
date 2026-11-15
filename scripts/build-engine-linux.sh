@@ -1,12 +1,12 @@
 #!/bin/sh
 # Builds Tomoru's Linux programs, on Linux x86-64, into app/resources/linux-amd64/bin/:
 # - tomoru-engine (engine/linux): hearing the default output, through PulseAudio's API (libpulse,
-#   which PipeWire's pipewire-pulse serves too);
+#   which PipeWire's pipewire-pulse serves too), and selecting a part of the screen (GTK 3);
 # - tomoru-asr (engine/asr): recognition with downloaded models;
 # - the sherpa-onnx libraries both load from beside them, which come with its Go module, and its
 #   license in licenses/.
-# It needs a C compiler, pkg-config, libpulse's headers and patchelf (on Debian and Ubuntu:
-# apt install build-essential pkg-config libpulse-dev patchelf). The voice detector they load,
+# It needs a C compiler, pkg-config, libpulse's and GTK 3's headers and patchelf (on Debian and
+# Ubuntu: apt install build-essential pkg-config libpulse-dev libgtk-3-dev patchelf). The voice detector they load,
 # vad/silero_vad.onnx, comes from scripts/fetch-vad.sh.
 set -e
 cd "$(dirname "$0")/.."

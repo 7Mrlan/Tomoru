@@ -9,7 +9,7 @@
 - **stdin** 承载 app 发来的命令，每行一个 JSON 对象。stdin 关闭时引擎退出，所以即使 app 崩溃，引擎也不会比它活得久。
 - 每个对象都有 `type`。双方都忽略不认识的类型和字段，所以任何一方都可以加字段而不破坏另一方。
 
-macOS 引擎是 `engine/mac`（Swift：Core Audio tap + SpeechAnalyzer），构建为 `tomoru-engine`，放进 `app/resources/darwin-arm64/bin/`。Windows 引擎是 `engine/windows`（Go，调用 Windows 的部分用 C：WASAPI 设备与进程环回、SAPI，以及自己的框选窗口），由 `scripts/build-engine-windows.sh` 构建为 `tomoru-engine.exe`，放进 `app/resources/windows-amd64/bin/`。Linux 引擎是 `engine/linux`（Go，调用 PulseAudio API 的部分用 C：默认输出的监听源，PipeWire 也提供这套 API），由 `scripts/build-engine-linux.sh` 构建为 `tomoru-engine`，放进 `app/resources/linux-amd64/bin/`；暂不支持朗读、列出应用和框选。两个 Go 引擎共用 `engine/shared`：协议、命令行、收听和人声检测。Windows 和 Linux 没有给应用用的语音识别，所以它们的引擎只收听：`listen` 必须带 `--asr none`，`prepare` 以 `unsupported-locale` 失败。
+macOS 引擎是 `engine/mac`（Swift：Core Audio tap + SpeechAnalyzer），构建为 `tomoru-engine`，放进 `app/resources/darwin-arm64/bin/`。Windows 引擎是 `engine/windows`（Go，调用 Windows 的部分用 C：WASAPI 设备与进程环回、SAPI，以及自己的框选窗口），由 `scripts/build-engine-windows.sh` 构建为 `tomoru-engine.exe`，放进 `app/resources/windows-amd64/bin/`。Linux 引擎是 `engine/linux`（Go，调用 PulseAudio API 的部分用 C：默认输出的监听源，PipeWire 也提供这套 API），由 `scripts/build-engine-linux.sh` 构建为 `tomoru-engine`，放进 `app/resources/linux-amd64/bin/`；它调用 GTK 的部分也用 C：在截图上用自己的窗口框选，截图在 Wayland 下由截图门户截取，在 X11 下由引擎自己截取；暂不支持朗读和列出应用。两个 Go 引擎共用 `engine/shared`：协议、命令行、收听和人声检测。Windows 和 Linux 没有给应用用的语音识别，所以它们的引擎只收听：`listen` 必须带 `--asr none`，`prepare` 以 `unsupported-locale` 失败。
 
 用下载的模型识别不属于平台：app 按引擎的 `voice` 事件，把平台引擎用 `listen --asr none` 听到的音频切成一段段语音，由 `tomoru-asr`（`engine/asr`，Go + sherpa-onnx，各平台相同）逐段解码（见下文「tomoru-asr」和[识别适配层](recognition_zh.md)）。app 用和自己会识别的引擎相同的事件报告识别结果。云端识别（`app/internal/asr/qwencloud`，阿里云百炼的 Qwen ASR）在 app 里接收同样的 `audio`，用同样的事件报告。
 
@@ -127,7 +127,7 @@ tomoru-engine select --out <png>                     让用户框选屏幕的一
 {"type":"locale","id":"ja-JP"}
 ```
 
-- `access` 和 `request-access` 用一个 `access` 对象回答。它的 `state` 是 `granted`、`denied` 或 `unknown`（还没问过用户）。`screen-access` 和 `request-screen-access` 对屏幕录制做同样的回答，框选翻译需要它；系统把引擎的权限算作 app 的。
+- `access` 和 `request-access` 用一个 `access` 对象回答。它的 `state` 是 `granted`、`denied` 或 `unknown`（还没问过用户）。`screen-access` 和 `request-screen-access` 对屏幕录制做同样的回答，框选翻译需要它；系统把引擎的权限算作 app 的。在 Linux 的 Wayland 下，它们回答的是桌面的截图权限，引擎以 app 的身份（它的桌面条目 ID）申请：用户允许之前都是 `unknown`，拒绝过也一样，因为 `request-screen-access` 会忘掉拒绝并再问一次；GNOME 只在 app 拥有焦点时询问。`request-screen-access` 等用户回答后才回答，多晚都等：桌面借一次截图来询问，截下的图由引擎删掉。在 X11 下回答 `granted`。
 - `locales` 对系统识别能听的每个 locale 发一个 `locale` 对象（macOS：`SpeechTranscriber.supportedLocales`），用 BCP 47 标签，然后退出；app 只让用户选这些语言作为说的语言。Apple 的 `zh-HK` 是粤语。`supportedLocale(equivalentTo:)` 不能用来判断支不支持：它对 `th-TH` 也有返回，而泰语并不在列表里。Windows 引擎没有识别，app 不会问它。
 - `apps` 对每个可以单独收听声音的应用发一个 `app` 对象：在程序坞里有图标的运行中应用（Windows 上是在任务栏上有窗口的），以及任何正在播放声音的应用（`playing`），正在播放的排在前面。然后退出。
 - Windows 收听播放的声音和截屏都不需要权限：几个权限命令都回答 `granted`。

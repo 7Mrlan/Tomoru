@@ -41,10 +41,10 @@ cd app && go tool mygo build -platform windows/amd64
 
 产物在 `app/build/windows-amd64/`（`Tomoru.exe` 与旁边的 `bin/`、`vad/`、`licenses/`），另有安装包 `tomoru-setup-<version>-amd64.exe`：在 Windows 上 MyGo 第一次会自己下载 NSIS；在 Mac 上要先装 NSIS（`brew install makensis`）。Windows 支持范围为 Windows 11 x64。「全部系统声音」用设备环回捕获默认播放设备，默认设备变化后会重新连接；单独输出到其他设备的应用不在捕获范围内。指定应用仍用进程环回，可能漏掉通信音频；遇到这种情况，把应用输出设为系统默认播放设备，并选择「全部系统声音」。进程环回 API 要求 [Windows build 20348 或更新](https://learn.microsoft.com/en-us/windows/win32/api/audioclientactivationparams/ns-audioclientactivationparams-audioclient_activation_params)，因此不支持 Windows 10。
 
-Linux 还在进行中（[#39](https://github.com/ACAne0320/Tomoru/issues/39)）：能收听全部系统声音并显示字幕，暂不能框选屏幕。它的引擎和 tomoru-asr 在 Linux x64 上构建（Ubuntu 22.04 或更新，PipeWire 或 PulseAudio），需要 C 编译器、pkg-config、libpulse 的头文件和 patchelf；运行 app 需要 `libayatana-appindicator3-1` 来显示托盘图标：
+Linux 还在进行中（[#39](https://github.com/ACAne0320/Tomoru/issues/39)）：能收听全部系统声音、显示字幕，并框选屏幕翻译。它的引擎和 tomoru-asr 在 Linux x64 上构建（Ubuntu 22.04 或更新，PipeWire 或 PulseAudio），需要 C 编译器、pkg-config、libpulse 和 GTK 3 的头文件以及 patchelf；运行 app 需要 `libayatana-appindicator3-1` 来显示托盘图标：
 
 ```sh
-sudo apt install build-essential pkg-config libpulse-dev patchelf libayatana-appindicator3-1
+sudo apt install build-essential pkg-config libpulse-dev libgtk-3-dev patchelf libayatana-appindicator3-1
 scripts/setup.sh                 # linux-amd64：tomoru-engine、tomoru-asr、人声检测和 llama-server
 cd app && go tool mygo build -platform linux/amd64
 ```
@@ -67,7 +67,7 @@ scripts/test.sh --race      # 开启 Go 的 race detector
 
 | | 部分 | 运行内容 |
 |---|---|---|
-| `check.sh` | `go` | 许可证清单、`gofmt`；app 针对 macOS、Windows 和 Linux、各引擎针对本平台和 Windows（Linux 引擎只在 Linux 上，需要 `apt install libpulse-dev`）的 `go vet`、`.golangci.yml` 里的 linter 和没有调用方的函数（`deadcode`）（需要 mingw-w64：`brew install mingw-w64`，`apt install gcc-mingw-w64-x86-64`）；以及 app 的分层、平台和设计规则。linter 的版本写在脚本里，第一次运行时构建到 `~/.cache/tomoru-tools` |
+| `check.sh` | `go` | 许可证清单、`gofmt`；app 针对 macOS、Windows 和 Linux、各引擎针对本平台和 Windows（Linux 引擎只在 Linux 上，需要 `apt install libpulse-dev libgtk-3-dev`）的 `go vet`、`.golangci.yml` 里的 linter 和没有调用方的函数（`deadcode`）（需要 mingw-w64：`brew install mingw-w64`，`apt install gcc-mingw-w64-x86-64`）；以及 app 的分层、平台和设计规则。linter 的版本写在脚本里，第一次运行时构建到 `~/.cache/tomoru-tools` |
 | | `swift` | Swift 引擎的类型检查，警告视为错误 |
 | `test.sh` | `go` | `app`、`engine/asr` 和 `engine/shared` 的测试，含 benchmark，不含 UI 和 `core/coretest` 桌面适配器 |
 | | `ui` | app 的 UI 测试 |

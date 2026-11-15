@@ -5711,6 +5711,22 @@ func (msgs Messages) ScreenSelectWhy() string {
 	return Catalog.Format(msgs.locale, "screenSelectWhy", nil)
 }
 
+// ScreenSelectWhyLinux says "Needs permission to take screenshots. Only what you select is translated."
+// in the language the app shows.
+//
+// screenSelectWhy on Linux, where the desktop asks whether the app may take
+// screenshots: what the permission is for.
+func ScreenSelectWhyLinux() string { return In(i18n.Locale()).ScreenSelectWhyLinux() }
+
+// ScreenSelectWhyLinux says "Needs permission to take screenshots. Only what you select is translated."
+// in the language of msgs.
+//
+// screenSelectWhy on Linux, where the desktop asks whether the app may take
+// screenshots: what the permission is for.
+func (msgs Messages) ScreenSelectWhyLinux() string {
+	return Catalog.Format(msgs.locale, "screenSelectWhyLinux", nil)
+}
+
 // ScreenSelectTurnOn says "Turn on selecting"
 // in the language the app shows.
 //

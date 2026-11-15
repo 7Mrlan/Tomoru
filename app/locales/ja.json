@@ -387,6 +387,7 @@
   "imageShortcut": "スクリーンショット翻訳",
   "shortcutDuplicate": "{keys} はもう一方のショートカットで使っています",
   "screenSelectWhy": "画面収録の許可が必要です。選んだ範囲だけを撮ります。",
+  "screenSelectWhyLinux": "スクリーンショットを撮る許可が必要です。翻訳するのは選んだ部分だけです。",
   "screenSelectTurnOn": "範囲選択をオンにする",
   "screenSelectAsking": "システムの確認を待っています…",
   "imageEngine": "エンジン",

@@ -10,7 +10,7 @@ import (
 )
 
 // TestCardPlace puts the card under what it translates, over it at the work area's foot, and in
-// the work area.
+// the work area; in its middle with nothing to go by.
 func TestCardPlace(t *testing.T) {
 	work := mygo.Rectangle{X: 0, Y: 25, Width: 1440, Height: 875}
 	for _, c := range []struct {
@@ -25,6 +25,7 @@ func TestCardPlace(t *testing.T) {
 		{"in from the right edge", mygo.Rectangle{X: 1300, Y: 200, Width: 100, Height: 50}, false, 1000, 258, false},
 		{"under the menu bar icon", mygo.Rectangle{X: 1200, Y: 0, Width: 24, Height: 24}, true, 992, 32, false},
 		{"no room either way", mygo.Rectangle{X: 0, Y: 25, Width: 1440, Height: 875}, false, 0, 580, false},
+		{"a tray icon that tells no place", mygo.Rectangle{}, true, 500, 302, false},
 	} {
 		x, y, above := cardPlace(c.at, c.centered, 440, 320, work)
 		if x != c.x || y != c.y || above != c.above {
