@@ -1,19 +1,19 @@
-// Tomoru 官网的 Worker。/download/mac 和 /download/windows 给访客最新的安装包：在中国大陆从 R2 下载，
+// Tomoru 官网的 Worker。/download/mac、/download/windows 和 /download/linux 给访客最新的安装包：在中国大陆从 R2 下载，
 // 别处跳到 GitHub；?from=github 或 ?from=cloudflare 指定来源。每半小时把 GitHub 上最新发布的安装包复制进 R2。
 // 其余请求都是静态页面。
 const repo = 'https://github.com/ACAne0320/Tomoru';
 
 // 每个系统的安装包，按 SHA256SUMS 里的文件名认
-const installers = { mac: /^tomoru-.+-arm64\.dmg$/, windows: /^tomoru-setup-.+-amd64\.exe$/ };
+const installers = { mac: /^tomoru-.+-arm64\.dmg$/, windows: /^tomoru-setup-.+-amd64\.exe$/, linux: /^tomoru_.+_amd64\.deb$/ };
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    const os = url.pathname.match(/^\/download\/(mac|windows)\/?$/)?.[1];
+    const os = url.pathname.match(/^\/download\/(mac|windows|linux)\/?$/)?.[1];
     if (!os) return env.ASSETS.fetch(request);
     const latest = await readLatest(env);
-    if (!latest) return Response.redirect(`${repo}/releases/latest`, 302);
-    const name = latest.files[os];
+    const name = latest?.files[os]; // 没有：还没同步过，或同步的那一版没有这个系统的安装包
+    if (!name) return Response.redirect(`${repo}/releases/latest`, 302);
     const github = `${repo}/releases/download/${latest.tag}/${name}`;
     const from = url.searchParams.get('from') ?? (request.cf?.country === 'CN' ? 'cloudflare' : 'github');
     if (from !== 'cloudflare') return Response.redirect(github, 302);

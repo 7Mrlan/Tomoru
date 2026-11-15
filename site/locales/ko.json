@@ -40,7 +40,7 @@
     },
     "systems": {
       "q": "지원하는 운영체제는 무엇인가요?",
-      "a": "macOS 26 이상(Apple 실리콘) 및 Windows 11(x64)을 지원합니다."
+      "a": "macOS 26 이상(Apple 실리콘), Windows 11(x64), Linux(x64, Ubuntu 22.04 또는 그만큼 최신인 배포판, GNOME 또는 KDE)를 지원합니다."
     },
     "languages": {
       "q": "지원하는 언어는 무엇인가요?",
@@ -64,7 +64,7 @@
   },
   "meta": {
     "title": "Tomoru: PC 실시간 이중 언어 자막 번역기",
-    "description": "Tomoru는 컴퓨터 소리를 직접 캡처하여 화면 최상단에 실시간 이중 언어 번역 자막을 띄웁니다. 해외 라이브 방송, 자막 없는 애니, 게임 등 PC에서 소리가 나면 언제나 자막이 함께합니다. 완전 무료 오픈소스, macOS 및 Windows 지원.",
+    "description": "Tomoru는 컴퓨터 소리를 직접 캡처하여 화면 최상단에 실시간 이중 언어 번역 자막을 띄웁니다. 해외 라이브 방송, 자막 없는 애니, 게임 등 PC에서 소리가 나면 언제나 자막이 함께합니다. 완전 무료 오픈소스, macOS, Windows, Linux 지원.",
     "ogTitle": "Tomoru: 보고 있는 모든 영상에 실시간 번역 자막을",
     "ogDescription": "컴퓨터 소리를 직접 캡처해 실시간 플로팅 이중 언어 자막을 생성합니다. 해외 방송, 자막 없는 애니, 게임 등 소리가 있는 곳엔 언제나 Tomoru가 함께합니다.",
     "ogImageAlt": "Tomoru와 머리 위의 펭귄 루비가 일본어 원문과 앰버 색상으로 빛나는 한국어 번역을 올려다보고 있는 모습",
@@ -88,14 +88,14 @@
     "claim": "보고 있는 모든 영상에 자막을.",
     "lead": "컴퓨터 소리를 직접 캡처해 실시간 플로팅 이중 언어 자막을 만듭니다. 외국어 방송, 자막 없는 애니, 해외 게임, 다국어 회의까지 바로 즐겨보세요.",
     "download": "무료 다운로드",
-    "platforms": "macOS 및 Windows",
+    "platforms": "macOS, Windows, Linux",
     "altSource": "느리면 다른 경로로:",
     "source": "소스 코드 보기",
     "factsLabel": "핵심 요약",
     "facts": {
       "languages": "31개 언어 상호 번역",
       "engines": "기기 내 또는 클라우드",
-      "systems": "macOS / Windows",
+      "systems": "macOS / Windows / Linux",
       "license": "오픈소스 GPL-3.0"
     },
     "visualLabel": "방송 창 위에 떠 있는 이중 언어 자막: 일본어 원문은 흰색, 한국어 번역은 앰버 색상이며, 새 문장이 아래에서 나오면서 이전 문장을 밀어 올리는 모습",
@@ -114,6 +114,7 @@
     "rollLang": "ja",
     "forMac": "macOS용 · Apple 실리콘",
     "forWindows": "Windows 11용 · x64",
+    "forLinux": "Linux용 · x64(.deb)",
     "copied": "복사됨",
     "roll": [
       {
@@ -301,7 +302,7 @@
     "picture": {
       "tag": "화면 텍스트 번역",
       "title": "음성이 없는 장면도 영역 선택으로 즉시 번역",
-      "body": "음성 없는 게임 대사나 영상 속 간판, 실시간 채팅 등은 <kbd>⌥⇧S</kbd>(Windows에서는 <kbd>Alt+Shift+S</kbd>)를 눌러 화면을 드래그하면 즉시 번역됩니다. 로컬 모델 사용 시 캡처 텍스트 인식 또한 기기 내에서만 이루어집니다.",
+      "body": "음성 없는 게임 대사나 영상 속 간판, 실시간 채팅 등은 <kbd>⌥⇧S</kbd>(Windows와 Linux에서는 <kbd>Alt+Shift+S</kbd>)를 눌러 화면을 드래그하면 즉시 번역됩니다. 로컬 모델 사용 시 캡처 텍스트 인식 또한 기기 내에서만 이루어집니다.",
       "artLabel": "단축키를 누르고 게임 내 일본어 대화창을 영역 선택하면 위쪽에 한국어 번역이 표시되는 모습",
       "srcLang": "ja",
       "srcName": "エルナ",
@@ -318,9 +319,9 @@
     "title": "세 단계면 자막이 나타납니다",
     "install": {
       "title": "다운로드 및 실행",
-      "body": "설치 파일을 더블 클릭하여 실행합니다(서명 경고 시 ‘확인 없이 열기’ 또는 ‘실행’ 클릭). 터미널에서 한 줄 명령어로 설치하면 시스템 경고 창 없이 간편하게 설치할 수 있습니다."
+      "body": "설치 파일을 더블 클릭하여 실행합니다(서명 경고 시 ‘확인 없이 열기’ 또는 ‘실행’ 클릭). 터미널에서 한 줄 명령어로 설치하면 시스템 경고 창 없이 간편하게 설치할 수 있습니다. Linux에서는 명령어 설치를 권장합니다. 이렇게 설치하면 자동으로 업데이트되고, .deb 패키지는 업데이트되지 않습니다."
     },
-    "copyMac": "macOS 설치 명령어 복사",
+    "copyMac": "macOS 및 Linux 설치 명령어 복사",
     "copyWindows": "Windows 설치 명령어 복사(PowerShell)",
     "copy": "복사",
     "choose": {
@@ -365,7 +366,7 @@
   },
   "callback": {
     "lead": "다운로드 후 앱이 자동으로 업데이트됩니다.",
-    "req": "macOS 26 이상 · Apple 실리콘　|　Windows 11 · x64",
+    "req": "macOS 26 이상 · Apple 실리콘　|　Windows 11 · x64　|　Linux · x64",
     "peekAlt": "Tomoru와 머리 위의 펭귄 루비가 화면 아래에서 빼꼼 고개를 내미는 모습"
   },
   "footer": {

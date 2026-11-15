@@ -11,6 +11,7 @@
   if (/iPhone|iPad|Android/i.test(ua)) label = '';
   else if (/Mac/i.test(plat) || /Macintosh/.test(ua)) label = t.forMac, os = 'mac';
   else if (/Win/i.test(plat) || /Windows/.test(ua)) label = t.forWindows, os = 'windows';
+  else if (/Linux/i.test(plat) || /Linux/.test(ua)) label = t.forLinux, os = 'linux';
   if (label) document.querySelectorAll('[data-platform]').forEach((el) => { el.textContent = label; });
 
   // 下载按钮直接给这个系统的安装包，由 worker.js 按访客所在地选来源；下面一行可以换来源

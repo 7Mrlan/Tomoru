@@ -40,7 +40,7 @@
     },
     "systems": {
       "q": "支持哪些系统？",
-      "a": "macOS 26 或更新（Apple 芯片），以及 Windows 11（x64）。"
+      "a": "macOS 26 或更新（Apple 芯片）、Windows 11（x64），以及 Linux（x64，Ubuntu 22.04 或同样新的发行版，GNOME 或 KDE 桌面）。"
     },
     "languages": {
       "q": "支持哪些语言？",
@@ -64,7 +64,7 @@
   },
   "meta": {
     "title": "Tomoru：看什么，都有字幕 | 电脑实时双语字幕翻译",
-    "description": "Tomoru 直接抓取电脑声音，实时生成悬浮双语字幕。无论是看直播、啃生肉还是打游戏，只要电脑有声音，字幕就在。识别与翻译支持离线或云端运行，完全开源免费，支持 macOS 和 Windows。",
+    "description": "Tomoru 直接抓取电脑声音，实时生成悬浮双语字幕。无论是看直播、啃生肉还是打游戏，只要电脑有声音，字幕就在。识别与翻译支持离线或云端运行，完全开源免费，支持 macOS、Windows 和 Linux。",
     "ogTitle": "Tomoru：看什么，都有字幕",
     "ogDescription": "直接抓取电脑声音，实时生成悬浮双语字幕。无论是看直播、啃生肉还是打游戏，电脑只要有声音，字幕就在。",
     "ogImageAlt": "Tomoru 和头顶的企鹅 ルビ 抬头看着一句日文和它亮成琥珀色的中文译文",
@@ -88,14 +88,14 @@
     "claim": "看什么，都有字幕。",
     "lead": "直接抓取电脑声音，实时生成悬浮双语字幕。外语直播、生肉番剧、游戏与跨国会议即开即用。",
     "download": "免费下载",
-    "platforms": "macOS 和 Windows",
+    "platforms": "macOS、Windows 和 Linux",
     "altSource": "下载慢？换个线路：",
     "source": "查看源码",
     "factsLabel": "要点",
     "facts": {
       "languages": "31 种语言互译",
       "engines": "本机或云端",
-      "systems": "macOS / Windows",
+      "systems": "macOS / Windows / Linux",
       "license": "开源 GPL-3.0"
     },
     "visualLabel": "一个直播窗口上方浮着双语字幕：日文原文是白色，中文译文是琥珀色，新的一句从下面出现，旧的往上推",
@@ -114,6 +114,7 @@
     "rollLang": "ja",
     "forMac": "适用于 macOS · Apple 芯片",
     "forWindows": "适用于 Windows 11 · x64",
+    "forLinux": "适用于 Linux · x64（.deb）",
     "copied": "已复制",
     "roll": [
       {
@@ -301,7 +302,7 @@
     "picture": {
       "tag": "翻译屏幕上的文字",
       "title": "无声画面，框选即翻",
-      "body": "遇到没有配音的游戏台词、视频招牌或直播弹幕，按 <kbd>⌥⇧S</kbd>（Windows 为 <kbd>Alt+Shift+S</kbd>）框选屏幕即可即时翻译。选用本地模型时，截图识别同样完全留在本地。",
+      "body": "遇到没有配音的游戏台词、视频招牌或直播弹幕，按 <kbd>⌥⇧S</kbd>（Windows 和 Linux 为 <kbd>Alt+Shift+S</kbd>）框选屏幕即可即时翻译。选用本地模型时，截图识别同样完全留在本地。",
       "artLabel": "按下快捷键，框选游戏里的日文对话框，上方出现中文译文",
       "srcLang": "ja",
       "srcName": "エルナ",
@@ -318,9 +319,9 @@
     "title": "三步，字幕就出来了",
     "install": {
       "title": "下载运行",
-      "body": "双击运行安装包（未签名提示点「仍要打开」即可）；或在终端直接运行一行脚本安装，免去系统拦截弹窗。"
+      "body": "双击运行安装包（未签名提示点「仍要打开」即可）；或在终端直接运行一行脚本安装，免去系统拦截弹窗。Linux 上推荐用命令安装：这样装的会自己更新，.deb 包不会。"
     },
-    "copyMac": "复制 macOS 的安装命令",
+    "copyMac": "复制 macOS 和 Linux 的安装命令",
     "copyWindows": "复制 Windows 的安装命令（PowerShell）",
     "copy": "复制",
     "choose": {
@@ -365,7 +366,7 @@
   },
   "callback": {
     "lead": "下载之后，app 会自己更新。",
-    "req": "macOS 26 或更新 · Apple 芯片　|　Windows 11 · x64",
+    "req": "macOS 26 或更新 · Apple 芯片　|　Windows 11 · x64　|　Linux · x64",
     "peekAlt": "Tomoru 和头顶的企鹅 ルビ 从屏幕下方探出头"
   },
   "footer": {

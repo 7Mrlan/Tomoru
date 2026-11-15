@@ -55,7 +55,7 @@ jobs:
           |---|---|---|
           | macOS (Apple silicon) | [tomoru-$version-arm64.dmg]($releases/tomoru-$version-arm64.dmg) | [tomoru.acane.dev/download/mac](https://tomoru.acane.dev/download/mac?from=cloudflare) |
           | Windows 11 x64 | [tomoru-setup-$version-amd64.exe]($releases/tomoru-setup-$version-amd64.exe) | [tomoru.acane.dev/download/windows](https://tomoru.acane.dev/download/windows?from=cloudflare) |
-          | Linux x64 (Debian, Ubuntu) | [$deb]($releases/$deb) | |
+          | Linux x64 (Debian, Ubuntu) | [$deb]($releases/$deb) | [tomoru.acane.dev/download/linux](https://tomoru.acane.dev/download/linux?from=cloudflare) |
 
           The mainland China links give the latest release, half an hour at most after it is published.
           $linux
