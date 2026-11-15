@@ -127,7 +127,7 @@ tomoru-engine select --out <png>                     让用户框选屏幕的一
 {"type":"locale","id":"ja-JP"}
 ```
 
-- `access` 和 `request-access` 用一个 `access` 对象回答。它的 `state` 是 `granted`、`denied` 或 `unknown`（还没问过用户）。`screen-access` 和 `request-screen-access` 对屏幕录制做同样的回答，框选翻译需要它；系统把引擎的权限算作 app 的。在 Linux 的 Wayland 下，它们回答的是桌面的截图权限，引擎以 app 的身份（它的桌面条目 ID）申请：用户允许之前都是 `unknown`，拒绝过也一样，因为 `request-screen-access` 会忘掉拒绝并再问一次；GNOME 只在 app 拥有焦点时询问。在 X11 下回答 `granted`。
+- `access` 和 `request-access` 用一个 `access` 对象回答。它的 `state` 是 `granted`、`denied` 或 `unknown`（还没问过用户）。`screen-access` 和 `request-screen-access` 对屏幕录制做同样的回答，框选翻译需要它；系统把引擎的权限算作 app 的。在 Linux 的 Wayland 下，它们回答的是桌面的截图权限，引擎以 app 的身份（它的桌面条目 ID）申请：用户允许之前都是 `unknown`，拒绝过也一样，因为 `request-screen-access` 会忘掉拒绝并再问一次；GNOME 只在 app 拥有焦点时询问。`request-screen-access` 等用户回答后才回答，多晚都等：桌面借一次截图来询问，截下的图由引擎删掉。在 X11 下回答 `granted`。
 - `locales` 对系统识别能听的每个 locale 发一个 `locale` 对象（macOS：`SpeechTranscriber.supportedLocales`），用 BCP 47 标签，然后退出；app 只让用户选这些语言作为说的语言。Apple 的 `zh-HK` 是粤语。`supportedLocale(equivalentTo:)` 不能用来判断支不支持：它对 `th-TH` 也有返回，而泰语并不在列表里。Windows 引擎没有识别，app 不会问它。
 - `apps` 对每个可以单独收听声音的应用发一个 `app` 对象：在程序坞里有图标的运行中应用（Windows 上是在任务栏上有窗口的），以及任何正在播放声音的应用（`playing`），正在播放的排在前面。然后退出。
 - Windows 收听播放的声音和截屏都不需要权限：几个权限命令都回答 `granted`。

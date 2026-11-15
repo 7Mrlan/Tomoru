@@ -28,13 +28,12 @@ static struct {
 // The portal's answer, which a main loop waits for.
 struct answer {
 	GMainLoop *loop;
-	guint code, timer; // timer: 0 once it fired
+	guint code;
 	char *uri;
 };
 
-// session is the session bus, on which the engine said what app it is, as the app does: the
-// portals then count its screenshots and their permission as the app's.
-static GDBusConnection *session(const char *app, char *why, int n) {
+// session_bus is the session bus.
+static GDBusConnection *session_bus(char *why, int n) {
 	static GDBusConnection *bus;
 	if (bus) return bus;
 	GError *err = NULL;
@@ -42,8 +41,17 @@ static GDBusConnection *session(const char *app, char *why, int n) {
 	if (!bus) {
 		snprintf(why, n, "session bus: %s", err->message);
 		g_error_free(err);
-		return NULL;
 	}
+	return bus;
+}
+
+// session is the session bus, on which the engine said what app it is, as the app does: the
+// portals then count its screenshots and their permission as the app's.
+static GDBusConnection *session(const char *app, char *why, int n) {
+	static gboolean registered;
+	GDBusConnection *bus = session_bus(why, n);
+	if (!bus || registered) return bus;
+	registered = TRUE;
 	GVariantBuilder opts;
 	g_variant_builder_init(&opts, G_VARIANT_TYPE("a{sv}"));
 	GVariant *r = g_dbus_connection_call_sync(bus, "org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop",
@@ -64,13 +72,6 @@ static void responded(GDBusConnection *bus, const char *sender, const char *path
 	g_main_loop_quit(a->loop);
 }
 
-static gboolean gave_up(gpointer data) {
-	struct answer *a = data;
-	a->timer = 0;
-	g_main_loop_quit(a->loop);
-	return G_SOURCE_REMOVE;
-}
-
 // portal_file takes a picture of every screen through the Screenshot portal, without its own
 // interface, and returns the file it is in, which the caller removes, or NULL with the reason in
 // why. The desktop asks the user the first time, which GNOME does only while the app has the
@@ -88,7 +89,7 @@ static char *portal_file(const char *app, guint *code, char *why, int n) {
 	snprintf(path, sizeof path, "/org/freedesktop/portal/desktop/request/%s/%s", sender, token);
 	g_free(sender);
 
-	struct answer a = {g_main_loop_new(NULL, FALSE), 2, 0, NULL};
+	struct answer a = {g_main_loop_new(NULL, FALSE), 2, NULL};
 	guint sub = g_dbus_connection_signal_subscribe(bus, "org.freedesktop.portal.Desktop",
 		"org.freedesktop.portal.Request", "Response", path, NULL, G_DBUS_SIGNAL_FLAGS_NO_MATCH_RULE,
 		responded, &a, NULL);
@@ -106,17 +107,10 @@ static char *portal_file(const char *app, guint *code, char *why, int n) {
 		goto out;
 	}
 	g_variant_unref(r);
-	// The first time, the desktop asks the user, who may take a while. Given up on, the request
-	// is closed, which closes the desktop's dialog: no picture is taken that nobody removes.
-	a.timer = g_timeout_add_seconds(110, gave_up, &a);
+	// The first time, the desktop asks the user, who may take a while: the answer is waited for,
+	// however late, for a yes takes a picture that only the engine removes. Closing the request
+	// does not stop it: the portals answer nothing while their dialog is open.
 	g_main_loop_run(a.loop);
-	if (a.timer) {
-		g_source_remove(a.timer);
-	} else {
-		GVariant *c = g_dbus_connection_call_sync(bus, "org.freedesktop.portal.Desktop", path,
-			"org.freedesktop.portal.Request", "Close", NULL, NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL);
-		if (c) g_variant_unref(c);
-	}
 	*code = a.code;
 	if (a.code != 0 || !a.uri) {
 		snprintf(why, n, a.code == 1 ? "the screenshot was not allowed" : "the desktop took no screenshot");
@@ -148,10 +142,10 @@ static GdkPixbuf *portal_shot(const char *app, char *why, int n) {
 }
 
 // stored is what the portals keep of the user's answer for app: TC_GRANTED, TC_DENIED or
-// TC_UNKNOWN when it has none.
+// TC_UNKNOWN when it has none. Their store answers while the portals ask the user.
 static int stored(const char *app) {
 	char why[64];
-	GDBusConnection *bus = session(app, why, sizeof why);
+	GDBusConnection *bus = session_bus(why, sizeof why);
 	if (!bus) return TC_UNKNOWN;
 	GVariant *r = g_dbus_connection_call_sync(bus, "org.freedesktop.impl.portal.PermissionStore",
 		"/org/freedesktop/impl/portal/PermissionStore", "org.freedesktop.impl.portal.PermissionStore", "Lookup",
@@ -171,7 +165,7 @@ static int stored(const char *app) {
 // forget removes the user's answer for app, a no, so that the desktop asks them again.
 static void forget(const char *app) {
 	char why[64];
-	GDBusConnection *bus = session(app, why, sizeof why);
+	GDBusConnection *bus = session_bus(why, sizeof why);
 	if (!bus) return;
 	GVariant *r = g_dbus_connection_call_sync(bus, "org.freedesktop.impl.portal.PermissionStore",
 		"/org/freedesktop/impl/portal/PermissionStore", "org.freedesktop.impl.portal.PermissionStore", "DeletePermission",

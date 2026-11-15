@@ -183,7 +183,9 @@ whether to start again.
   under Wayland they answer for the desktop's permission to take screenshots, which the engine
   asks for as the app, by its desktop entry's ID: `unknown` until the user allowed it, a no
   included, since `request-screen-access` forgets a no and asks again; GNOME asks only while the
-  app has the focus. Under X11 the answer is `granted`.
+  app has the focus. `request-screen-access` answers once the user did, however late: the
+  desktop asks by taking a screenshot, which the engine removes. Under X11 the answer is
+  `granted`.
 - `locales` sends one `locale` object per locale the system's recognition hears (macOS:
   `SpeechTranscriber.supportedLocales`), by BCP 47 tag, then exits; the app offers those languages
   to speak. Apple's `zh-HK` is Cantonese. `supportedLocale(equivalentTo:)` is no test of a locale:

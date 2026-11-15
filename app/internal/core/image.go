@@ -299,14 +299,15 @@ func (c *Core) CheckScreen() {
 }
 
 // RequestScreen has the system ask the user for Screen Recording, once; after, it is turned on in
-// System Settings.
+// System Settings. Where the engine waits for the answer, the user may leave the system's dialog
+// open a while.
 func (c *Core) RequestScreen() {
 	if c.ScreenAsking {
 		return
 	}
 	c.ScreenAsking = true
 	c.changed()
-	c.ask(2*time.Minute, func(evs []engine.Event) { c.ScreenAsking = false; c.setScreen(evs) }, "request-screen-access")
+	c.ask(time.Hour, func(evs []engine.Event) { c.ScreenAsking = false; c.setScreen(evs) }, "request-screen-access")
 }
 
 func (c *Core) setScreen(evs []engine.Event) {
