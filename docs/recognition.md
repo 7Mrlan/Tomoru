@@ -188,6 +188,16 @@ streaming (local-asr.md), moved into the app and made general:
   model must be left free to say so: its answer is never started for it. Words in another script
   stay: Japanese and Korean dialogue has real English words ("OK", "Yes"), and dropping them needs
   a benchmark first.
+- **Another language**: Qwen3-ASR tells the language it hears, and a decode keeps it when the model
+  is sure the session's language is not what it heard: the session's below e^-15, three in ten million,
+  where the answer names its language (`top_logprobs`). Else it decodes again, limited to the
+  session's language. Told the session's language alone, it wrote speech in another language as its
+  own English translation ("We, the Beijing team, are the strongest" for 我们BLG就是最强的), or
+  heard none; left to tell the language with no threshold, it took songs for English and translated
+  them. Measured 2026-11-16 over 4 s windows of a Worlds interview in English, Chinese and Korean:
+  the other languages were written as said in 108 of 125 windows of an English session (83
+  before), and 206 of 212 of a Korean one (64 before, most of the rest no speech); 2 of 690 windows of the benchmark's
+  other cases changed language wrongly, songs (7 at e^-12, 23 with no threshold).
 
 `tomoru-asr` becomes a decoder: `tomoru-asr serve --model <dir>` reads
 `{"type":"decode","id":7,"lang":"ja","final":true,"pcm":"…"}` and answers
@@ -409,7 +419,7 @@ a recognizer that takes hints (`Spec.Hints`); a name learned meanwhile is heard 
 | `apple` | Stream | In the engine. `asr/apple`'s `Hint` tells the session when to have the engine `finalize`: once the hypothesis has stood 1.3 s, and in Chinese, whose clauses it ends late, at 0.2 s pauses too (what the segmenter's `VoiceCuts` did) |
 | `qwen-cloud` | Stream | `cloudasr` moved to `asr/qwencloud`; the hang-up on silence moves to `asr` for every billed adapter |
 | `sensevoice-small` | Batch | `tomoru-asr serve`; Timed; Volatile 0.4 s; Gap and Longest by measurement (now 0.5 s, 12 s; 0.25 s before the engine's detector, see local-asr.md) |
-| `qwen3-asr-0.6b`, `qwen3-asr-1.7b` | Batch | llama-server with the model's audio projector, chat API with the stretch as `input_audio` WAV; the reply is `language Japanese<asr_text>…`; a grammar limits the language to the session's or `None`, no speech; a system message always, as the model was trained, with the scene's names or empty; `max_tokens` by the stretch's length (12 a second and 16), and an answer that uses them all is dropped; untimed. GPU only: on the CPU it falls behind |
+| `qwen3-asr-0.6b`, `qwen3-asr-1.7b` | Batch | llama-server with the model's audio projector, chat API with the stretch as `input_audio` WAV; the reply is `language Japanese<asr_text>…`; the model tells the language, kept when it is sure that is not the session's (see Another language), else decoded again with a grammar limiting the language to the session's or `None`, no speech; a system message always, as the model was trained, with the scene's names or empty; `max_tokens` by the stretch's length (12 a second and 16), and an answer that uses them all is dropped; untimed. GPU only: on the CPU it falls behind |
 | `openai` | Stream | Realtime transcription by default: a WebSocket session, 24 kHz, turns by the engine's voice detection, each committed; `…transcription.delta` as volatile, `…completed` as final, in the commit order of items, as completions may come out of order; billed |
 | `openai` with another model | Batch | `POST {base}/v1/audio/transcriptions`, multipart WAV; `model`, `language`, `prompt` (the stretch before); Volatile 0 (each decode costs money and a round trip); Gap 0.5 s, Longest 5 s, for latency |
 
@@ -478,7 +488,7 @@ models together leave little of 8 GB of VRAM to a game; the page says so.
   the current tests that describe removed rules go with them.
 - Protocol: `decode`/`decoded` in `protocol/fixtures.json`, read by the Go and `engine/asr` sides.
 - Adapters: OpenAI transcriptions against an `httptest` server; Realtime against a fake WebSocket,
-  completions out of order; Qwen3-ASR's reply parsing, grammar and answer limit; the hang-up on silence moved,
+  completions out of order; Qwen3-ASR's reply parsing, grammar, language choice and answer limit; the hang-up on silence moved,
   with its tests.
 - Benchmark, before and after each step: error rate, Shown and Final p50, Rewrite %, Long %,
   Fragment %, Noise, on the 29 cases plus dialogue cases. A local case kind for recordings that

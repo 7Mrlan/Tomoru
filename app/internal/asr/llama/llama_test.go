@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -34,15 +35,17 @@ func TestGrammar(t *testing.T) {
 	}
 }
 
-// TestDecode sends the stretch as a WAV, the answer's language limited by a grammar and not
-// started for the model, and reads the answer.
+// TestDecode sends the stretch as a WAV, the model to tell the language with its likeliest
+// alternatives, and reads the answer.
 func TestDecode(t *testing.T) {
 	var got struct {
 		Messages []struct {
 			Role    string
 			Content json.RawMessage
 		}
-		Grammar string
+		Grammar     string
+		Logprobs    bool
+		TopLogprobs int `json:"top_logprobs"`
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		json.NewDecoder(r.Body).Decode(&got)
@@ -59,8 +62,8 @@ func TestDecode(t *testing.T) {
 	if len(got.Messages) == 2 {
 		json.Unmarshal(got.Messages[0].Content, &system)
 	}
-	if len(got.Messages) != 2 || got.Messages[0].Role != "system" || system != "一心, 葦名" || got.Messages[1].Role != "user" || got.Grammar != grammar("ja") {
-		t.Fatalf("messages %d, system %q, grammar %q", len(got.Messages), system, got.Grammar)
+	if len(got.Messages) != 2 || got.Messages[0].Role != "system" || system != "一心, 葦名" || got.Messages[1].Role != "user" || got.Grammar != "" || !got.Logprobs || got.TopLogprobs != topLogprobs {
+		t.Fatalf("messages %d, system %q, grammar %q, logprobs %v %d", len(got.Messages), system, got.Grammar, got.Logprobs, got.TopLogprobs)
 	}
 	got.Messages = got.Messages[1:] // the user's, with the audio, first
 	var parts []struct {
@@ -72,6 +75,43 @@ func TestDecode(t *testing.T) {
 	if len(parts) != 1 || parts[0].Type != "input_audio" || parts[0].InputAudio.Format != "wav" ||
 		string(audio[:4]) != "RIFF" || string(audio[8:12]) != "WAVE" || len(audio) != 44+3200 {
 		t.Fatalf("audio %+v, %d bytes", parts, len(audio))
+	}
+}
+
+// TestLanguage keeps another language than the session's when the model is sure of it, and decodes
+// again in the session's language when not.
+func TestLanguage(t *testing.T) {
+	const other = `{"choices":[{"message":{"content":"language Chinese<asr_text>我们BLG就是最强的。"},"logprobs":{"content":[` +
+		`{"token":"language","top_logprobs":[{"token":"language","logprob":0}]},` +
+		`{"token":" Chinese","top_logprobs":[{"token":" Chinese","logprob":0},{"token":" Cantonese","logprob":-9}%s]}]}}]}`
+	for _, c := range []struct {
+		name, alternatives string
+		asks               int
+		want               string
+	}{
+		{"sure", `,{"token":" Eng","logprob":-20}`, 1, "我们BLG就是最强的。"},
+		{"not sure", `,{"token":" English","logprob":-4}`, 2, "We BLG are the strongest."},
+		{"not listed, below the least listed", "", 2, "We BLG are the strongest."},
+		{"not listed, the least listed unlikely", `,{"token":" Japanese","logprob":-20}`, 1, "我们BLG就是最强的。"},
+	} {
+		asks := 0
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			var got struct{ Grammar string }
+			json.NewDecoder(r.Body).Decode(&got)
+			asks++
+			if got.Grammar == grammar("en") {
+				w.Write([]byte(`{"choices":[{"message":{"content":"language English<asr_text>We BLG are the strongest."}}]}`))
+				return
+			}
+			fmt.Fprintf(w, other, c.alternatives)
+		}))
+		d := New(srv.URL, "en", "")
+		text, err := d.transcribe(context.Background(), make([]byte, 3200))
+		d.Stop()
+		srv.Close()
+		if err != nil || text != c.want || asks != c.asks {
+			t.Errorf("%s: %q after %d asks, %v", c.name, text, asks, err)
+		}
 	}
 }
 
