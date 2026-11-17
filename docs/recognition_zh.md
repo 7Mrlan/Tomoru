@@ -139,6 +139,7 @@ type Spec struct {
 - **提前出句**：模型已经结束的一句，后面还有文字，并且两次解码一致，就立刻定稿（发 `final: true` 的 `result`），翻译不用等一长段说完。有时间的解码器丢掉这句的音频，从它的结尾往后解码；没有时间的，在下一个停顿处结束这段，以后的解码就不必在文本里找这句。
 - **负载**：同时只有一个解码在跑。解码跟不上时跳过临时解码，不排队；定稿解码一定执行。
 - **噪声**：模型标为没有语言的那一段（Qwen3-ASR 的 `language None`）丢掉，只有标点的文字也丢掉，比说话还长的回答也丢掉（见适配器）。要让模型能这么说：不替它写回答的开头。别的文字照样保留：日语、韩语对白里有真的英文词（"OK"、"Yes"），要丢掉它们得先做评测。
+- **别的语言**：Qwen3-ASR 自己说出听到的语言；模型确定不是会话的语言时照用：在回答说出语言的那个位置，会话语言的概率低于 e^-15（千万分之三，`top_logprobs`）。否则限定为会话的语言再解一次。只告诉它会话的语言时，它把别的语言写成自己的英文翻译（「我们BLG就是最强的」写成 "We, the Beijing team, are the strongest"），或者当成没有人声；让它自己说语言、不设门槛时，它把歌当成英文，翻译歌词。2026-11-16 在 4 秒窗口上测：一场英中韩三语的 Worlds 采访，英文会话里别的语言照原样写出的窗口 125 个中 108 个（之前 83 个），韩语会话 212 个中 206 个（之前 64 个，其余多数当成没有人声）；评测集其余用例 690 个窗口里错换语言的 2 个，都是歌（门槛 e^-12 时 7 个，不设门槛 23 个）。
 
 `tomoru-asr` 变成解码器：`tomoru-asr serve --model <dir>` 读 `{"type":"decode","id":7,"lang":"ja","final":true,"pcm":"…"}`，回 `{"type":"decoded","id":7,"tokens":[…]}`。它的人声检测和流式逻辑去掉；sherpa-onnx 保留，用于 SenseVoice，以及 Windows 引擎里的人声检测。
 
@@ -256,7 +257,7 @@ Qwen3-ASR 0.6B，2026-11-07 加入，给显存不够跑 1.7B 的 GPU：适配器
 | `apple` | 流式 | 在引擎里。`asr/apple` 的 `Hint` 告诉会话何时让引擎 `finalize`：临时结果 1.3 s 不变时；中文的分句结束得晚，在 0.2 s 的停顿处也定稿（原来断句器 `VoiceCuts` 做的事） |
 | `qwen-cloud` | 流式 | `cloudasr` 挪到 `asr/qwencloud`；静音挂断挪到 `asr`，所有计费的适配器共用 |
 | `sensevoice-small` | 整段 | `tomoru-asr serve`；有时间；临时解码间隔 0.4 s；Gap 和 Longest 按实测（现在 0.5 s、12 s；改用引擎的检测器前是 0.25 s，见 local-asr_zh.md） |
-| `qwen3-asr-0.6b`、`qwen3-asr-1.7b` | 整段 | llama-server 加载模型的音频投影器，用 chat 接口把这段作为 `input_audio` WAV 发过去；回复是 `language Japanese<asr_text>…`；用语法把语言限定为会话的语言或 `None`（没有人声）；始终带 system 消息（模型训练时的格式），放场景里的名字，没有就留空；`max_tokens` 按这一段的时长给（每秒 12 个，另加 16 个），用完的回答丢掉；没有时间。只用 GPU：CPU 跟不上 |
+| `qwen3-asr-0.6b`、`qwen3-asr-1.7b` | 整段 | llama-server 加载模型的音频投影器，用 chat 接口把这段作为 `input_audio` WAV 发过去；回复是 `language Japanese<asr_text>…`；语言由模型自己说，它确定不是会话的语言时照用（见“别的语言”），否则用语法把语言限定为会话的语言或 `None`（没有人声）再解一次；始终带 system 消息（模型训练时的格式），放场景里的名字，没有就留空；`max_tokens` 按这一段的时长给（每秒 12 个，另加 16 个），用完的回答丢掉；没有时间。只用 GPU：CPU 跟不上 |
 | `openai` | 流式 | 默认实时转写：WebSocket 会话，24 kHz，轮次由引擎的语音检测切分，每轮提交；`…transcription.delta` 作为临时结果，`…completed` 作为定稿，按条目提交的顺序，因为定稿可能乱序到达；计费 |
 | `openai` 填了别的模型 | 整段 | `POST {base}/v1/audio/transcriptions`，multipart WAV；`model`、`language`、`prompt`（上一段）；不做临时解码（每次解码都花钱且要往返）；Gap 0.5 s，Longest 5 s，降低延迟 |
 
@@ -294,7 +295,7 @@ Qwen3-ASR 0.6B，2026-11-07 加入，给显存不够跑 1.7B 的 GPU：适配器
 - `asr/batch` 用假解码器测：按人声事件切段、`Gap`、超过 `Longest` 后在下一个停顿结束、两次一致且不回缩、提前出句（有时间和没时间两种）、负载下跳过、解码中途停止。
 - `segment`：完整句子提交、尾巴和下一次定稿拼接、`TailWait`、过长保险；描述已删规则的现有测试一并删除。
 - 协议：`protocol/fixtures.json` 加 `decode`/`decoded`，Go 和 `engine/asr` 两侧都读。
-- 适配器：OpenAI 转写对 `httptest` 服务测；Realtime 对假 WebSocket 测，包括 completed 乱序；Qwen3-ASR 的回复解析、语法和回答上限；静音挂断挪位置后带着它的测试。
+- 适配器：OpenAI 转写对 `httptest` 服务测；Realtime 对假 WebSocket 测，包括 completed 乱序；Qwen3-ASR 的回复解析、语法、语言选择和回答上限；静音挂断挪位置后带着它的测试。
 - 评测：每一步前后对比错误率、出字 p50、定稿 p50、改写 %、过长 %、碎句 %、噪声，覆盖 29 段加对白用例。加一种本地用例，用于不在 YouTube 上的录音（只狼录音不进仓库），参考文本手写。
 - 手测（Windows）：只狼窗口模式下分别用 SenseVoice、Qwen3-ASR 和云端，并在屏幕上实际看字幕层。
 

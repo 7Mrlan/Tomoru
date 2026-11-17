@@ -90,7 +90,7 @@ Each case gives:
 
 ## Cases (2026-10-17)
 
-46 stretches, about 3.5 hours: 29 have human subtitles as references, 15 have human translations,
+47 stretches, about 3.8 hours: 29 have human subtitles as references, 15 have human translations,
 and 14 have both. `python3 bench/fetch.py --list` shows the latest reference counts by language.
 
 | Scene | en | ja | ko | zh |
@@ -143,6 +143,9 @@ and change `ref` to `manual`. For songs, use the official lyrics; their timing c
   removed, leaving only the Chinese.
 - The same Kurzgesagt video exists in English and Japanese (`en-science-kurz` and
   `ja-science-kurz`), to compare languages.
+- `en-live-worlds` is in three languages: each answer, in Chinese or Korean, is interpreted into
+  the other two, so a session in any of them hears the other two as well. It also has a crowd
+  cheering and music over the trophy lift, where nothing should be written.
 - When the subtitles end before the video while people still speak, `score.py` warns: everything
   after would count as extra, so move the case's end earlier.
 
