@@ -30,6 +30,9 @@ cd .. && uv run bench/score.py apple_cloud_1017-1030 sensevoice_cloud_1017-1100 
   `gpt-live-transcribe`, the transcription API; reads `OPENAI_API_KEY`, and `OPENAI_BASE_URL` for a
   compatible service; billed by duration). `-mt`: `cloud[:model]` (`Index-Translate-9B`, `Index-Translate-2B`), a translation model's ID (`local-2b`, `local-9b`, `hy-mt2-1.8b`, `hy-mt2-7b`), `hy-mt-cloud[:model]` (Hy-MT2 on Tencent Cloud's TokenHub, reads `TOKENHUB_API_KEY`, billed by tokens), or `chat` with `-mt-url` and `-mt-model` (the
   key from `MT_API_KEY`).
+- `-auto` has recognition tell the language it hears, as Auto-detect does in the app, instead of
+  being told the case's: for `sensevoice` and `qwen3-asr-*`. Each new line's language is recorded
+  with it (`lang`).
 - Results go in `runs/<name>/` (not in the repository): one JSON per case, recording each change
   of the subtitles with its time; `score.py` writes `score.md`. Running again under the same name
   merges in the new cases, so runs can be split into batches.

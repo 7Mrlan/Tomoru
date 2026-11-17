@@ -57,6 +57,9 @@ type Spec struct {
 	// Langs are the languages it recognizes, in the order of lang.All; nil for those the system
 	// says (Apple's).
 	Langs []string
+	// Auto tells it hears which of Langs is spoken, stretch by stretch, and says it with each
+	// result (engine.Event's Lang): a session of lang.Auto may use it.
+	Auto bool
 	// Model is the model to download before it can be used, or nil.
 	Model *models.Model
 	// Key tells it needs an API key.
@@ -169,9 +172,9 @@ func specs(goos string) []Spec {
 		case !m.ASR:
 		case m.Served():
 			// Untimed: the sentences it ends while a stretch goes on commit from its volatile text.
-			ss = append(ss, Spec{ID: m.ID, Langs: m.Langs, Model: m, VolatileSentences: true, Hints: true, New: served})
+			ss = append(ss, Spec{ID: m.ID, Langs: m.Langs, Auto: true, Model: m, VolatileSentences: true, Hints: true, New: served})
 		default:
-			ss = append(ss, Spec{ID: m.ID, Langs: m.Langs, Model: m, New: local})
+			ss = append(ss, Spec{ID: m.ID, Langs: m.Langs, Auto: true, Model: m, New: local})
 		}
 	}
 	// Qwen's volatile sentence ends hold once qwencloud has steadied them.

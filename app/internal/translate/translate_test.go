@@ -500,3 +500,15 @@ func TestWarm(t *testing.T) {
 		t.Errorf("warmed %d times, %d completions", models.Load(), completions.Load())
 	}
 }
+
+// TestUnknownSource asks for a translation into the target alone where the language heard is not
+// known.
+func TestUnknownSource(t *testing.T) {
+	r := Request{Tgt: "zh", Text: "안녕하세요."}
+	if p := indexPrompt(r); !strings.HasPrefix(p, "请将以下文本翻译成中文，") {
+		t.Errorf("Index prompt %q", p)
+	}
+	if s := chatSystem(r); !strings.HasPrefix(s, "You are a live subtitle translator. Translate the user's line into natural, colloquial Simplified Chinese ") {
+		t.Errorf("system prompt %q", s)
+	}
+}

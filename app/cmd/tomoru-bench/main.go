@@ -32,6 +32,7 @@ import (
 
 	"tomoru/internal/asr"
 	"tomoru/internal/engine"
+	"tomoru/internal/lang"
 	"tomoru/internal/live"
 	"tomoru/internal/models"
 	"tomoru/internal/scene"
@@ -57,11 +58,12 @@ func main() {
 	mtURL := flag.String("mt-url", "", "with -mt chat: the API's base URL, without /v1")
 	mtModel := flag.String("mt-model", "", "with -mt chat: the model")
 	draft := flag.Bool("draft", true, "translate sentences while they are spoken, as the app does by default")
+	auto := flag.Bool("auto", false, "have recognition tell the language it hears (Auto-detect), not the case's")
 	mtOnly := flag.Bool("mt-only", false, "translate the references' sentences, with no recognition")
 	jobs := flag.Int("j", 1, "cases at once; more makes it faster and the latencies of local engines worse")
 	maxSec := flag.Float64("max", 0, "seconds of each case at most, from its start; 0 for all")
 	only := flag.String("case", "", "the cases to run, by ID, comma-separated")
-	lang := flag.String("lang", "", "only the cases of this language")
+	ofLang := flag.String("lang", "", "only the cases of this language")
 	kind := flag.String("scene", "", "only the cases of this scene")
 	everyCase := flag.Bool("all", false, "the cases with no reference yet too: their latencies have nothing to go by")
 	tail := flag.Duration("tail", 10*time.Second, "how long to wait after the recording, for its last sentence")
@@ -86,7 +88,7 @@ func main() {
 	var cases []Case
 	ids := strings.FieldsFunc(*only, func(r rune) bool { return r == ',' })
 	for _, c := range all {
-		if (len(ids) == 0 || slices.Contains(ids, c.ID)) && (*lang == "" || c.Lang == *lang) && (*kind == "" || c.Scene == *kind) &&
+		if (len(ids) == 0 || slices.Contains(ids, c.ID)) && (*ofLang == "" || c.Lang == *ofLang) && (*kind == "" || c.Scene == *kind) &&
 			(c.HasRef() || *everyCase && !*mtOnly) {
 			cases = append(cases, c)
 		}
@@ -117,13 +119,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	run := Run{ASR: *asrName, MT: *mt, Draft: *draft, MTOnly: *mtOnly, Glossary: *glossary, About: *about, Jobs: *jobs, Max: *maxSec, Started: time.Now()}
+	run := Run{ASR: *asrName, MT: *mt, Auto: *auto, Draft: *draft, MTOnly: *mtOnly, Glossary: *glossary, About: *about, Jobs: *jobs, Max: *maxSec, Started: time.Now()}
 	if *mtOnly {
 		run.ASR = "reference"
 	}
 	run.Name = *name
 	if run.Name == "" {
-		run.Name = fmt.Sprintf("%s_%s_%s", strings.ReplaceAll(run.ASR, ":", "-"), *mt, run.Started.Format("0102-1504"))
+		asr := strings.ReplaceAll(run.ASR, ":", "-")
+		if *auto {
+			asr += "-auto"
+		}
+		run.Name = fmt.Sprintf("%s_%s_%s", asr, *mt, run.Started.Format("0102-1504"))
 	}
 	out := filepath.Join(dir, "runs", run.Name)
 	if err := os.MkdirAll(out, 0o755); err != nil {
@@ -169,6 +175,9 @@ func main() {
 					log.Fatal(err)
 				}
 				cfg := live.Config{Engine: bin, Recognize: recognize, VolatileSentences: spec.VolatileSentences, FinalsEnd: spec.FinalsEnd, Translator: tr, Draft: *draft, About: func() string { return desc }}
+				if *auto {
+					cfg.Src = lang.Auto
+				}
 				if spec.Hint != nil {
 					cfg.Hint = spec.Hint(c.Lang)
 				}

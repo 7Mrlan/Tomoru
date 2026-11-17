@@ -28,11 +28,11 @@ var packageDependencies = map[string][]string{
 	"ui/kit":        {"ui/assets"},
 	"ui/shared":     {"core", "asr", "engine", "lang", "models", "prefs", "scene", "ui/assets", "ui/kit"},
 	"ui/subtitle":   {"lang", "live", "prefs", "samples", "translate", "ui/kit"},
-	"ui/guide":      {"core", "engine", "live", "models", "prefs", "ui/assets", "ui/kit", "ui/shared", "ui/subtitle"},
+	"ui/guide":      {"core", "engine", "lang", "live", "models", "prefs", "ui/assets", "ui/kit", "ui/shared", "ui/subtitle"},
 	"ui/imagecard":  {"core", "translate", "ui/assets", "ui/kit", "ui/shared"},
 	"ui/overlay":    {"core", "prefs", "ui/assets", "ui/kit", "ui/shared", "ui/subtitle"},
 	"ui/panel":      {"core", "prefs", "ui/assets", "ui/kit", "ui/shared"},
-	"ui/settings":   {"asr", "core", "history", "live", "models", "prefs", "proxy", "scene", "translate", "usage", "ui/assets", "ui/kit", "ui/shared", "ui/subtitle"},
+	"ui/settings":   {"asr", "core", "history", "lang", "live", "models", "prefs", "proxy", "scene", "translate", "usage", "ui/assets", "ui/kit", "ui/shared", "ui/subtitle"},
 	"ui/shell":      {"core", "prefs", "ui/assets", "ui/guide", "ui/imagecard", "ui/kit", "ui/overlay", "ui/panel", "ui/settings", "ui/shared"},
 }
 

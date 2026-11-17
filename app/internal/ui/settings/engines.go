@@ -13,6 +13,7 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"tomoru/internal/core"
+	"tomoru/internal/lang"
 	"tomoru/internal/models"
 	"tomoru/internal/prefs"
 	"tomoru/internal/ui/assets"
@@ -264,6 +265,9 @@ func (s *Settings) choice(c *ui.Context, f []core.Engine, shown bool) kit.Choice
 		}
 	case !r.On && f[0].Kind == core.ASR && k.SpokenWith(f[0]) != k.Preferences().Src:
 		r.Meta, r.Warn = locales.DoesntHear(shared.LangName(k.Preferences().Src)), true
+		if k.Preferences().Src == lang.Auto {
+			r.Meta = locales.CantDetect()
+		}
 	case loading != nil:
 		r.Meta = locales.Downloading(shared.Size(st.Done), shared.Size(st.Total))
 		if sizes {
@@ -352,7 +356,11 @@ func (s *Settings) detail(c *ui.Context, kind core.Kind, f []core.Engine) {
 		kit.Caption(c, note).Margin(-kit.Space(2), 0, 0)
 	}
 	if src := k.Preferences().Src; kind == core.ASR && !inUse {
-		if then := k.SpokenWith(f[0]); then != src {
+		switch then := k.SpokenWith(f[0]); {
+		case then == src:
+		case src == lang.Auto:
+			kit.Warning(c, locales.CantDetectSwitch(shared.LangName(then)))
+		default:
 			kit.Warning(c, locales.DoesntHearSwitch(shared.LangName(src), shared.LangName(then)))
 		}
 	}

@@ -22,6 +22,7 @@ type Event struct {
 	Draft   *string `json:"draft,omitempty"`   // the draft translation of the pending text
 	Line    int     `json:"line,omitempty"`    // a line's ID, new or changed
 	Src     string  `json:"src,omitempty"`     // a new line's text
+	Lang    string  `json:"lang,omitempty"`    // the language it was heard in
 	LDraft  string  `json:"ldraft,omitempty"`  // the draft it keeps until its translation is done
 	Tgt     *string `json:"tgt,omitempty"`     // its translation so far
 	Done    bool    `json:"done,omitempty"`    // its translation is complete
@@ -56,6 +57,7 @@ type Run struct {
 	Name     string    `json:"name"`
 	ASR      string    `json:"asr"`
 	MT       string    `json:"mt"`
+	Auto     bool      `json:"auto,omitempty"` // recognition told the language it heard
 	Draft    bool      `json:"draft"`
 	MTOnly   bool      `json:"mtOnly,omitempty"`
 	Glossary string    `json:"glossary,omitempty"`

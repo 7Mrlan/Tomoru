@@ -221,7 +221,7 @@ with and without it.
 ## Appendix: the scanning prompt
 
 The system prompt `internal/learn` uses (the experiment's second round). `{src}` and `{tgt}` are
-language names. The user message holds, in order: the scene's name and description, the current
+language names; `{src}` is left out for sessions of Auto-detect, of many. The user message holds, in order: the scene's name and description, the current
 glossary, and each sentence as "原文：… / 译文：…" (original / translation). The prompt is in
 Chinese, as sent:
 

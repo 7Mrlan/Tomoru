@@ -201,8 +201,10 @@ func (s *Settings) record(c *ui.Context, r history.Record) {
 
 // line is a line kept: as heard, the names the glossary corrected marked, as terms, the scene's,
 // tell them; its translation; and what recognition heard of those names. Of a session untranslated,
-// the line as heard is all there is, and shows as a translation would.
+// or said in the language translated into, the line as heard is all there is, and shows as a
+// translation would.
 func line(c *ui.Context, l history.Entry, terms []scene.Term, untranslated bool) {
+	untranslated = untranslated || l.Said
 	p := kit.Colors(c)
 	src := ui.Span{Size: kit.TextControl, Color: p.InkMuted}
 	if untranslated {

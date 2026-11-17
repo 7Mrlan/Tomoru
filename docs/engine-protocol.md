@@ -107,6 +107,9 @@ A recognition result: the hypothesis for the audio from `start` to `end`.
   not timed the words yet.
 - **`conf`** is the recognizer's confidence from 0 to 1, where it gives one. On macOS that is
   final results only.
+- **`lang`** is the language heard, of the app's codes (`ja`, `zh`), where the recognizer tells it:
+  the app's own recognizers (tomoru-asr's SenseVoice, Qwen3-ASR) do, sentence by sentence, which
+  is how a session of Auto-detect knows what each line is in. The capture engines leave it out.
 
 ### `clock`
 
@@ -225,7 +228,7 @@ An engine whose recognizer can't do this ignores it.
 ## tomoru-asr
 
 ```
-tomoru-asr serve --model <dir> --lang <zh|en|ja|ko|yue> [--threads <n>]   decode stretches of speech
+tomoru-asr serve --model <dir> --lang <auto|zh|en|ja|ko|yue> [--threads <n>]   decode stretches of speech
 ```
 
 `<dir>` is a downloaded model (SenseVoice: `model.int8.onnx` and `tokens.txt`). The app cuts speech
@@ -240,11 +243,12 @@ into stretches and asks for each to be decoded as it grows and once more when it
   ```
 
 - **stdout** carries `hello` (`"engine":"asr"`), then a `decoded` for each `decode`, in order, with
-  the same `id`: the stretch's tokens, each with its time from the stretch's start, and no `end`.
-  The spaces SenseVoice puts between Chinese, Cantonese and Japanese words are gone.
+  the same `id`: the stretch's tokens, each with its time from the stretch's start, and no `end`,
+  and its `lang`: `--lang`, or with `auto` the language SenseVoice heard, absent where it heard
+  none. The spaces SenseVoice puts between Chinese, Cantonese and Japanese words are gone.
 
   ```json
-  {"type":"decoded","id":"7","tokens":[{"text":"Hello","start":0},{"text":".","start":0.48}]}
+  {"type":"decoded","id":"7","tokens":[{"text":"Hello","start":0},{"text":".","start":0.48}],"lang":"en"}
   ```
 
 - Its `error` codes are `model-failed` and `internal` (invalid JSON, malformed PCM or an input read

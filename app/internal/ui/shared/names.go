@@ -38,15 +38,23 @@ func DownloadError(err error) string {
 	return locales.DownloadFailed(err.Error())
 }
 
-// LangName is a language's name in the language the app shows.
-func LangName(code string) string { return lang.Name(code, i18n.Locale()) }
+// LangName is a language's name in the language the app shows; for lang.Auto, that the language
+// is detected.
+func LangName(code string) string {
+	if code == lang.Auto {
+		return locales.AutoDetect()
+	}
+	return lang.Name(code, i18n.Locale())
+}
 
-// LangChoices are languages as a picker lists them: those most watched first, then the others by
-// name, after a separator ("", as kit.Choices takes it).
+// LangChoices are languages as a picker lists them: lang.Auto first, then those most watched, then
+// the others by name, each group after a separator ("", as kit.Choices takes it).
 func LangChoices(codes []string) []string {
-	var first, rest []string
+	var auto, first, rest []string
 	for _, code := range codes {
-		if slices.Contains(lang.Featured, code) {
+		if code == lang.Auto {
+			auto = []string{code, ""}
+		} else if slices.Contains(lang.Featured, code) {
 			first = append(first, code)
 		} else {
 			rest = append(rest, code)
@@ -57,7 +65,7 @@ func LangChoices(codes []string) []string {
 	if len(first) > 0 && len(rest) > 0 {
 		first = append(first, "")
 	}
-	return append(first, rest...)
+	return append(auto, append(first, rest...)...)
 }
 
 // FontName is a font's name: a preset's of prefs.Fonts, by its key, or a family's own.

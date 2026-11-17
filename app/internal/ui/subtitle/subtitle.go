@@ -54,10 +54,11 @@ var Schemes = []Scheme{
 type Entry struct {
 	Key      any // the sentence's ID, which keeps its element as it goes from pending to committed
 	Src, Tgt string
-	Pending  bool // still being spoken
-	DimTgt   bool // Tgt is not this sentence's, or not a translation
-	Note     bool // Tgt is a note in the app's language, such as why there is no translation
-	Draft    bool // Tgt is a draft: the translation of an unfinished sentence
+	Lang     string // the language Src was heard in, as live.Line's; "" for the one spoken (prefs.Prefs's Src)
+	Pending  bool   // still being spoken
+	DimTgt   bool   // Tgt is not this sentence's, or not a translation
+	Note     bool   // Tgt is a note in the app's language, such as why there is no translation
+	Draft    bool   // Tgt is a draft: the translation of an unfinished sentence
 	// Swaps says that Tgt changes whole, as a draft does to the next, or to the translation: it
 	// cross-fades, where a translation streaming in grows.
 	Swaps bool
@@ -66,7 +67,9 @@ type Entry struct {
 // Visible is what shows of st, oldest first, like scrolling lyrics: the lines since the
 // subtitles last went, and what is being said. With one sentence at a time the previous
 // translation stays while the next sentence is recognized, dimmed: it is not that sentence's
-// translation. With the original alone, no entry has a translation.
+// translation. With the original alone, no entry has a translation. A sentence said in the language
+// translated into is shown in the translation's place: it is what to read, as bilingual subtitles
+// show a line said in their language alone.
 func Visible(st live.State, since int, p prefs.Prefs) []Entry {
 	n := int(p.Shown)
 	var all []Entry
@@ -74,10 +77,12 @@ func Visible(st live.State, since int, p prefs.Prefs) []Entry {
 		if l.ID < since {
 			continue
 		}
-		e := Entry{Key: l.ID, Src: l.Src, Tgt: l.Tgt, Swaps: l.Draft != ""}
+		e := Entry{Key: l.ID, Src: l.Src, Tgt: l.Tgt, Lang: l.Lang, Swaps: l.Draft != ""}
 		switch {
 		case p.Display == prefs.DisplaySrc:
 			e.Tgt, e.Swaps = "", false
+		case l.AsSaid:
+			e.Src, e.Tgt = "", l.Src
 		case l.Draft != "" && !l.Done:
 			// A translation streaming in starts shorter than the draft it replaces: keep the draft
 			// until the translation is done, rather than going back to a few words.
@@ -93,12 +98,18 @@ func Visible(st live.State, since int, p prefs.Prefs) []Entry {
 	if p.Display == prefs.DisplaySrc {
 		draft = ""
 	}
-	if st.Pending != "" && (p.Display != prefs.DisplayTgt || draft != "") {
+	if st.Pending != "" {
 		next := 1
 		if k := len(st.Lines); k > 0 {
 			next = st.Lines[k-1].ID + 1
 		}
-		all = append(all, Entry{Key: next, Src: st.Pending, Pending: true, Tgt: draft, Draft: draft != "", Swaps: draft != ""})
+		e := Entry{Key: next, Src: st.Pending, Lang: st.PendingLang, Pending: true, Tgt: draft, Draft: draft != "", Swaps: draft != ""}
+		if st.PendingLang == p.Tgt && p.Display != prefs.DisplaySrc {
+			e.Src, e.Tgt = "", st.Pending // as it will show once said
+		}
+		if p.Display != prefs.DisplayTgt || e.Tgt != "" {
+			all = append(all, e)
+		}
 	}
 	if k := len(all); p.Display == prefs.DisplayBoth && n == 1 && k >= 2 && all[k-1].Tgt == "" && all[k-2].Tgt != "" {
 		cur, prev := all[k-1], all[k-2]
@@ -135,9 +146,21 @@ func Samples(p prefs.Prefs) []Entry {
 	var out []Entry
 	from := len(samples.Lines) - min(int(p.Shown), len(samples.Lines))
 	for i, s := range samples.Lines[from:] {
-		out = append(out, Entry{Key: -1 - from - i, Src: samples.In(s, p.Src), Tgt: samples.In(s, p.Tgt)})
+		out = append(out, Entry{Key: -1 - from - i, Src: samples.In(s, sampleSrc(p)), Lang: sampleSrc(p), Tgt: samples.In(s, p.Tgt)})
 	}
 	return out
+}
+
+// sampleSrc is the language the samples are said in: the one spoken, or for lang.Auto, of many,
+// English, or Japanese for subtitles in English.
+func sampleSrc(p prefs.Prefs) string {
+	switch {
+	case p.Src != lang.Auto:
+		return p.Src
+	case p.Tgt == "en":
+		return "ja"
+	}
+	return "en"
 }
 
 // RollEvery is how often Rolling brings in the next sample.
@@ -150,7 +173,7 @@ type rollKey int64
 func Sample(p prefs.Prefs, n int64) Entry {
 	l := int64(len(samples.Lines))
 	s := samples.Lines[(n%l+l)%l]
-	return Entry{Key: rollKey(n), Src: samples.In(s, p.Src), Tgt: samples.In(s, p.Tgt)}
+	return Entry{Key: rollKey(n), Src: samples.In(s, sampleSrc(p)), Lang: sampleSrc(p), Tgt: samples.In(s, p.Tgt)}
 }
 
 // Rolling are the sample sentences as they would come, in the chosen languages: one more every
@@ -219,9 +242,12 @@ const NoBlock = 1e9
 func Draw(c *ui.Context, entries []Entry, p prefs.Prefs, k, width, bareBelow float32) (top float32) {
 	align := Align(p)
 	band := p.Style == 0
-	cjk := lang.CJK(p.Src)
 	opacity := float32(p.TextOpacity) / 100
 	for i, e := range entries {
+		srcLang := e.Lang
+		if srcLang == "" && p.Src != lang.Auto {
+			srcLang = p.Src
+		}
 		age := len(entries) - 1 - i
 		roll := ui.ElementTransition{
 			Position:  true,
@@ -271,9 +297,9 @@ func Draw(c *ui.Context, entries []Entry, p prefs.Prefs, k, width, bareBelow flo
 						// Still being recognized: one line that rolls, as live captions do, rather
 						// than a second line opening and filling word by word, a little faint.
 						n, dim = 1, .8
-						text = fitTail(c, p, text, float32(p.SrcSize)*k, width-36*k, cjk)
+						text = fitTail(c, p, text, srcLang, float32(p.SrcSize)*k, width-36*k)
 					}
-					line(c, p, text, p.Src, float32(p.SrcSize)*k, hex(p.SrcColor, ui.RGBA(255, 255, 255, 1)), n).Opacity(dim * opacity)
+					line(c, p, text, srcLang, float32(p.SrcSize)*k, hex(p.SrcColor, ui.RGBA(255, 255, 255, 1)), n).Opacity(dim * opacity)
 				}
 				tgt := func() {
 					if e.Tgt == "" || p.Display == prefs.DisplaySrc {
@@ -325,12 +351,13 @@ func family(p prefs.Prefs) string {
 	return p.Font
 }
 
-// fitTail is s if it fits one line of width at size, else "…" and as much of its end as fits:
-// the newest words of a sentence still being spoken matter most. Spaced languages start at a
+// fitTail is s, in code, if it fits one line of width at size, else "…" and as much of its end as
+// fits: the newest words of a sentence still being spoken matter most. Spaced languages start at a
 // word.
-func fitTail(c *ui.Context, p prefs.Prefs, s string, size, width float32, cjk bool) string {
+func fitTail(c *ui.Context, p prefs.Prefs, s, code string, size, width float32) string {
+	cjk := lang.CJK(code)
 	measure := func(t string) float32 {
-		w, _ := c.MeasureText(0, ui.Span{Text: t, Font: family(p), Size: size, Weight: 700, Lang: p.Src})
+		w, _ := c.MeasureText(0, ui.Span{Text: t, Font: family(p), Size: size, Weight: 700, Lang: code})
 		return w
 	}
 	if measure(s) <= width {

@@ -3251,6 +3251,24 @@ func (msgs Messages) TryRecognizingWait(language string) string {
 	return Catalog.Format(msgs.locale, "tryRecognizingWait", map[string]any{"language": language})
 }
 
+// AnyLanguage says "any language"
+// in the language the app shows.
+//
+// Guide, try step: what fills {language} in its sentences (Play a video in
+// {language}; Recognizing {language}) when the spoken language is
+// Auto-detect.
+func AnyLanguage() string { return In(i18n.Locale()).AnyLanguage() }
+
+// AnyLanguage says "any language"
+// in the language of msgs.
+//
+// Guide, try step: what fills {language} in its sentences (Play a video in
+// {language}; Recognizing {language}) when the spoken language is
+// Auto-detect.
+func (msgs Messages) AnyLanguage() string {
+	return Catalog.Format(msgs.locale, "anyLanguage", nil)
+}
+
 // TryTranslating says "Translating into {language}"
 // in the language the app shows.
 //
@@ -4705,6 +4723,24 @@ func (msgs Messages) DoesntHear(lang string) string {
 	return Catalog.Format(msgs.locale, "doesntHear", map[string]any{"lang": lang})
 }
 
+// AutoDetect says "Auto-detect"
+// in the language the app shows.
+//
+// A choice of the spoken language, first in its menus: the recognition
+// tells which language it hears, sentence by sentence, for videos and
+// streams that change language.
+func AutoDetect() string { return In(i18n.Locale()).AutoDetect() }
+
+// AutoDetect says "Auto-detect"
+// in the language of msgs.
+//
+// A choice of the spoken language, first in its menus: the recognition
+// tells which language it hears, sentence by sentence, for videos and
+// streams that change language.
+func (msgs Messages) AutoDetect() string {
+	return Catalog.Format(msgs.locale, "autoDetect", nil)
+}
+
 // DoesntHearSwitch says "Doesn't hear {lang}. Using it changes the spoken language to {then}."
 // in the language the app shows.
 //
@@ -4721,6 +4757,38 @@ func DoesntHearSwitch(lang string, then string) string {
 // language: what using it changes.
 func (msgs Messages) DoesntHearSwitch(lang string, then string) string {
 	return Catalog.Format(msgs.locale, "doesntHearSwitch", map[string]any{"lang": lang, "then": then})
+}
+
+// CantDetect says "Can't detect the language"
+// in the language the app shows.
+//
+// Under a recognition engine in the list, in red, when the spoken language
+// is Auto-detect: it must be told the language.
+func CantDetect() string { return In(i18n.Locale()).CantDetect() }
+
+// CantDetect says "Can't detect the language"
+// in the language of msgs.
+//
+// Under a recognition engine in the list, in red, when the spoken language
+// is Auto-detect: it must be told the language.
+func (msgs Messages) CantDetect() string {
+	return Catalog.Format(msgs.locale, "cantDetect", nil)
+}
+
+// CantDetectSwitch says "Can't detect the language. Using it changes the spoken language to {then}."
+// in the language the app shows.
+//
+// In a recognition engine's detail, when the spoken language is Auto-detect
+// and it cannot detect it: what using it changes.
+func CantDetectSwitch(then string) string { return In(i18n.Locale()).CantDetectSwitch(then) }
+
+// CantDetectSwitch says "Can't detect the language. Using it changes the spoken language to {then}."
+// in the language of msgs.
+//
+// In a recognition engine's detail, when the spoken language is Auto-detect
+// and it cannot detect it: what using it changes.
+func (msgs Messages) CantDetectSwitch(then string) string {
+	return Catalog.Format(msgs.locale, "cantDetectSwitch", map[string]any{"then": then})
 }
 
 // NeedsKey says "Add an API key to use it"

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	sherpa "github.com/k2-fsa/sherpa-onnx-go/sherpa_onnx"
 )
@@ -32,9 +33,9 @@ func newSenseVoice(dir, lang string, threads int) (*senseVoice, error) {
 	return &senseVoice{r}, nil
 }
 
-func (v *senseVoice) Decode(samples []float32) []Piece {
+func (v *senseVoice) Decode(samples []float32) ([]Piece, string) {
 	if len(samples) == 0 {
-		return nil
+		return nil, ""
 	}
 	s := sherpa.NewOfflineStream(v.r)
 	defer sherpa.DeleteOfflineStream(s)
@@ -49,5 +50,15 @@ func (v *senseVoice) Decode(samples []float32) []Piece {
 		}
 		out = append(out, Piece{Text: t, At: at})
 	}
-	return out
+	return out, heard(res.Lang)
+}
+
+// heard is the language of SenseVoice's tag, "<|ja|>": zh, en, ja, ko or yue; "" for none heard
+// ("<|nospeech|>").
+func heard(tag string) string {
+	switch l := strings.Trim(tag, "<|>"); l {
+	case "zh", "en", "ja", "ko", "yue":
+		return l
+	}
+	return ""
 }

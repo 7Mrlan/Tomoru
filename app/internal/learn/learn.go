@@ -56,7 +56,13 @@ func Ask(ctx context.Context, m Asker, c Context, lines []Line) ([]Suggestion, e
 	return Filter(found, c, lines), nil
 }
 
-func langName(l string) string { return lang.Name(l, "zh-Hans") }
+// langName is a language's name in Chinese, for the prompt: "" for lang.Auto, of many.
+func langName(l string) string {
+	if l == lang.Auto {
+		return ""
+	}
+	return lang.Name(l, "zh-Hans")
+}
 
 // system is the prompt of the experiment's second round (docs/scenes.md), which found names
 // right more often than wrong with the stronger models.

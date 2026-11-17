@@ -48,7 +48,7 @@ const (
 type Prefs struct {
 	Onboarded        bool
 	GuideStep        int     // the first-run guide's page, to come back to: System Settings quits the app to grant it permission
-	Src, Tgt         string  // language codes, of lang.All
+	Src, Tgt         string  // language codes, of lang.All; Src lang.Auto too
 	Source           string  // the app to hear, by bundle ID; "" for all the system's sound
 	SourceName       string  // its name, to show while it is not running
 	Display          int     // DisplayBoth, DisplayTgt or DisplaySrc
@@ -256,7 +256,7 @@ func (p *Prefs) fix(d Prefs) {
 	if p.Display < DisplayBoth || p.Display > DisplaySrc {
 		p.Display = d.Display
 	}
-	if !lang.Known(p.Src) || !lang.Known(p.Tgt) || p.Src == p.Tgt {
+	if !lang.Known(p.Src) && p.Src != lang.Auto || !lang.Known(p.Tgt) || p.Src == p.Tgt {
 		p.Src, p.Tgt = d.Src, d.Tgt
 	}
 	if !lang.Known(p.ImageTgt) || p.ImageTgt == p.Tgt {

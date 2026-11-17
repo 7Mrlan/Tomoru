@@ -14,9 +14,9 @@ import (
 const rate = 16000
 
 // Recognizer decodes a stretch of audio, 16 kHz mono: its tokens, each with its time from the
-// stretch's start.
+// stretch's start, and the language it heard, "" for none.
 type Recognizer interface {
-	Decode(samples []float32) []Piece
+	Decode(samples []float32) ([]Piece, string)
 }
 
 // Piece is a token a recognizer decoded, at At seconds into the stretch.
@@ -25,8 +25,8 @@ type Piece struct {
 	At   float64
 }
 
-// decode answers a decode command: the stretch's tokens, cleaned for lang, each timed from its
-// start.
+// decode answers a decode command: the stretch's tokens, cleaned for its language, each timed from
+// its start, and the language: lang, or the one heard where lang is "auto".
 func decode(rec Recognizer, lang string, c Command) (Event, error) {
 	b, err := base64.StdEncoding.DecodeString(c.PCM)
 	if err != nil {
@@ -40,13 +40,18 @@ func decode(rec Recognizer, lang string, c Command) (Event, error) {
 		samples[i] = float32(int16(binary.LittleEndian.Uint16(b[2*i:]))) / 32768
 	}
 	tokens := []Token{}
+	spoken := ""
 	if len(samples) > 0 {
-		for _, p := range clean(rec.Decode(samples), lang) {
+		pieces, heard := rec.Decode(samples)
+		if spoken = lang; lang == "auto" {
+			spoken = heard
+		}
+		for _, p := range clean(pieces, spoken) {
 			at := round(p.At)
 			tokens = append(tokens, Token{Text: p.Text, Start: &at})
 		}
 	}
-	return Event{Type: "decoded", ID: c.ID, Tokens: tokens}, nil
+	return Event{Type: "decoded", ID: c.ID, Tokens: tokens, Lang: spoken}, nil
 }
 
 // clean drops the spaces SenseVoice puts between Chinese, Cantonese and Japanese words, which they

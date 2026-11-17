@@ -46,10 +46,12 @@ const (
 // and the app stopping it, forever.
 var forced = finishing + time.Second
 
-// Piece is a token a decoder decoded, at At seconds into the stretch.
+// Piece is a token a decoder decoded, at At seconds into the stretch, in the language Lang, of
+// lang.All: the one the decoder heard the stretch in, where it tells it; else "".
 type Piece struct {
 	Text string
 	At   float64
+	Lang string
 }
 
 // Decoder decodes a stretch of speech, 16 kHz mono 16-bit little-endian PCM, as a process does
@@ -454,10 +456,15 @@ func unstopped(pieces []Piece) []Piece {
 // decode on; keeping it and showing the rest of the latest changed 20; leaving out the latest's
 // last word, a word the decode cut, did nothing more. What shows shrinks not: two decodes that
 // agree on less leave it, as a reading going back and forth. The final decode reads the whole
-// stretch again, as before.
+// stretch again, as before. A decode in another language than what shows is another reading: it
+// starts anew, as a stretch whose start was taken for the language before turns out another, once
+// there is more of it to tell.
 func (r *Runner) settle(cur []Piece) []Piece {
 	if r.caps.Steady {
 		return cur
+	}
+	if len(cur) > 0 && len(r.agreed) > 0 && cur[0].Lang != r.agreed[0].Lang {
+		r.last, r.agreed = nil, nil
 	}
 	if r.last != nil {
 		if n := common(r.last, cur); n >= len(r.agreed) {
@@ -538,7 +545,7 @@ func letters(s string) int {
 func (r *Runner) send(ev engine.Event) { r.on(ev) }
 
 // result is the result of the pieces decoded from..to: volatile, their text as one token, or none
-// (no Type); or final, each token timed.
+// (no Type); or final, each token timed. Its language is theirs.
 func result(final bool, from, to int64, pieces []Piece) engine.Event {
 	t0, t1 := float64(from)/rate, float64(to)/rate
 	var tokens []engine.Token
@@ -562,7 +569,14 @@ func result(final bool, from, to int64, pieces []Piece) engine.Event {
 		}
 		tokens = []engine.Token{}
 	}
-	return engine.Event{Type: "result", Final: final, Start: round(t0), End: round(t1), Tokens: tokens}
+	ev := engine.Event{Type: "result", Final: final, Start: round(t0), End: round(t1), Tokens: tokens}
+	for _, p := range pieces {
+		if p.Lang != "" {
+			ev.Lang = p.Lang
+			break
+		}
+	}
+	return ev
 }
 
 // ending is a sentence's end, or a clause's, as a recognizer ends a stretch.

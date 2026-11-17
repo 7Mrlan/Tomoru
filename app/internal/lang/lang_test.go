@@ -56,3 +56,26 @@ func TestWriting(t *testing.T) {
 		}
 	}
 }
+
+// TestFits tells a label that cannot be right by the scripts of the text.
+func TestFits(t *testing.T) {
+	for _, c := range []struct {
+		text, code string
+		want       bool
+	}{
+		{"금이 될지도 몰라.", "ko", true},
+		{"금이 될지도 몰라.", "zh", false},
+		{"金になるかもしれない。", "zh", false},
+		{"金になるかもしれない。", "ja", true},
+		{"噂？", "ja", true},
+		{"我们BLG就是最强的。", "zh", true},
+		{"我们BLG就是最强的。", "en", false},
+		{"We BLG are the strongest.", "zh", false},
+		{"We BLG are the strongest.", "fr", true},
+		{"…", "ko", true},
+	} {
+		if got := Fits(c.text, c.code); got != c.want {
+			t.Errorf("Fits(%q, %s) = %v", c.text, c.code, got)
+		}
+	}
+}

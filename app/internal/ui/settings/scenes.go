@@ -7,6 +7,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
+	"tomoru/internal/lang"
 	"tomoru/internal/scene"
 	"tomoru/internal/ui/assets"
 	"tomoru/internal/ui/kit"
@@ -144,10 +145,10 @@ func (s *Settings) sceneDetail(c *ui.Context, sc *scene.Scene) (then func()) {
 	section(c, locales.SceneLangs(), nil, func() {
 		src, tgt := sc.Src, sc.Tgt
 		setSrc := func(l string) {
-			k.UpdateScene(id, func(current *scene.Scene) { setLang(&current.Src, &current.Tgt, l) })
+			k.UpdateScene(id, func(current *scene.Scene) { lang.Choose(&current.Src, &current.Tgt, l) })
 		}
 		setTgt := func(l string) {
-			k.UpdateScene(id, func(current *scene.Scene) { setLang(&current.Tgt, &current.Src, l) })
+			k.UpdateScene(id, func(current *scene.Scene) { lang.Choose(&current.Tgt, &current.Src, l) })
 		}
 		if inUse {
 			current := k.Preferences()
@@ -183,14 +184,6 @@ func section(c *ui.Context, label string, after, end func()) {
 			end()
 		}
 	})
-}
-
-// setLang sets a language of a scene not in use, swapping them when it is the other's.
-func setLang(side, other *string, l string) {
-	if l == *other {
-		*other = *side
-	}
-	*side = l
 }
 
 // glossary is a scene's names, a table: each as written, its translation and the ways it was

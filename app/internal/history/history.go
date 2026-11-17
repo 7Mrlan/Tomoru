@@ -37,8 +37,13 @@ type Entry struct {
 	At    time.Time `json:"at"`
 	Src   string    `json:"src"`             // as shown: the names heard wrong written right
 	Heard string    `json:"heard,omitempty"` // as recognized, when the glossary changed it
-	Tgt   string    `json:"tgt"`
-	Err   string    `json:"err,omitempty"` // why it has no translation
+	// Lang is the language it was heard in, where not the session's (Head's Src): a session of
+	// Auto-detect's, or another the recognizer told.
+	Lang string `json:"lang,omitempty"`
+	// Said tells it was heard in the language translated into: it showed as said, untranslated.
+	Said bool   `json:"said,omitempty"`
+	Tgt  string `json:"tgt"`
+	Err  string `json:"err,omitempty"` // why it has no translation
 }
 
 // Record is a session kept: its file, what it was, and how many lines it has.

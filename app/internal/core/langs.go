@@ -14,15 +14,19 @@ import (
 // The languages to choose: to speak, those the recognition in use hears; to translate into, all.
 
 // SourceLangs are the languages the recognition in use hears, in the order of lang.All: the
-// system's as it says, a model's, the cloud's. Any may be spoken while the system has not said,
-// and with no recognition chosen.
+// system's as it says, a model's, the cloud's; lang.Auto first, where it tells which it hears. Any
+// may be spoken while the system has not said, and with no recognition chosen.
 func (c *Core) SourceLangs() []string { return c.spoken(c.Prefs.ASR) }
 
 func (c *Core) spoken(id string) []string {
-	if hears := c.Hears(id); hears != nil {
-		return hears
+	hears := c.Hears(id)
+	if hears == nil {
+		return lang.Spoken()
 	}
-	return lang.Spoken()
+	if s, _ := asr.ByID(id); s.Auto {
+		return append([]string{lang.Auto}, hears...)
+	}
+	return hears
 }
 
 // Hears are the languages recognition id hears that can be spoken, in the order of lang.All; nil
@@ -50,8 +54,11 @@ func (c *Core) SpokenWith(e Engine) string { return fitSrc(c.spoken(e.ID), c.Pre
 // writes them.
 func (c *Core) TargetLangs() []string { return slices.Clone(lang.All) }
 
-// CanSwap tells whether the languages can be swapped: the recognition hears the target.
-func (c *Core) CanSwap() bool { return slices.Contains(c.SourceLangs(), c.Prefs.Tgt) }
+// CanSwap tells whether the languages can be swapped: the recognition hears the target, and one
+// language is spoken, not lang.Auto, which nothing is translated into.
+func (c *Core) CanSwap() bool {
+	return c.Prefs.Src != lang.Auto && slices.Contains(c.SourceLangs(), c.Prefs.Tgt)
+}
 
 // fitLangs makes the spoken language one the recognition hears, if it is not, and tells whether it
 // changed it.

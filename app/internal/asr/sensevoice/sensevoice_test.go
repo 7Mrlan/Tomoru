@@ -12,7 +12,7 @@ import (
 )
 
 // TestMain is tomoru-asr too, when the test runs itself as it: it answers each decode with a token
-// at half the stretch, and exits on an empty stretch, as a crash.
+// at half the stretch, heard in Japanese, and exits on an empty stretch, as a crash.
 func TestMain(m *testing.M) {
 	if os.Getenv("FAKE_TOMORU_ASR") == "" {
 		os.Exit(m.Run())
@@ -27,20 +27,20 @@ func TestMain(m *testing.M) {
 		if len(b) == 0 {
 			os.Exit(3)
 		}
-		fmt.Printf(`{"type":"decoded","id":%q,"tokens":[{"text":"%d","start":%g}]}`+"\n", c.ID, len(b)/2, float64(len(b)/2)/16000/2)
+		fmt.Printf(`{"type":"decoded","id":%q,"tokens":[{"text":"%d","start":%g}],"lang":"ja"}`+"\n", c.ID, len(b)/2, float64(len(b)/2)/16000/2)
 	}
 }
 
 func TestDecoder(t *testing.T) {
 	t.Setenv("FAKE_TOMORU_ASR", "1")
-	d, err := Start(os.Args[0], t.TempDir(), "ja")
+	d, err := Start(os.Args[0], t.TempDir(), "auto")
 	if err != nil {
 		t.Fatal(err)
 	}
 	ctx := context.Background()
 	for _, n := range []int{1600, 3200} {
 		pieces, err := d.Decode(ctx, make([]byte, 2*n))
-		if err != nil || len(pieces) != 1 || pieces[0].Text != fmt.Sprint(n) || pieces[0].At != float64(n)/16000/2 {
+		if err != nil || len(pieces) != 1 || pieces[0].Text != fmt.Sprint(n) || pieces[0].At != float64(n)/16000/2 || pieces[0].Lang != "ja" {
 			t.Fatalf("decoded %d samples: %v %v", n, pieces, err)
 		}
 	}
