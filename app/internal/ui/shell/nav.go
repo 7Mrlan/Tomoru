@@ -1,6 +1,7 @@
 package shell
 
 import (
+	"log"
 	"time"
 
 	"github.com/egoist/mygo"
@@ -98,6 +99,11 @@ func (s *Shell) ShowSettingsPage(page string) {
 		})
 		// Its controls are on the night's band, dark in either appearance: drawn light (Windows).
 		w.SetWindowButtonsTheme(mygo.ThemeDark)
+		// GTK's take the theme's color, dark in a light one, whatever the window: theirs alone
+		// are over a hidden title bar, so those are made light (Linux; nothing elsewhere).
+		if err := mygo.Theme.SetGTKCSS(`headerbar.mygo-window-controls button.titlebutton { color: #f6efe4; }`); err != nil {
+			log.Println("settings:", err)
+		}
 		s.settings = w
 		w.OnClosed(func() {
 			if s.settings == w {
@@ -176,7 +182,7 @@ func (s *Shell) Focus() { mygo.App.Focus() }
 func (s *Shell) SetAppearance(a string) { mygo.Theme.SetSource(kit.ThemeSource(a)) }
 
 func (s *Shell) SetShortcut(acc string) error {
-	return bind(&s.shortcut, acc, func() {
+	return bind(&s.shortcut, acc, locales.Shortcut(), func() {
 		if !s.core.Press(core.StartStop) {
 			s.core.Toggle()
 		}
@@ -184,7 +190,7 @@ func (s *Shell) SetShortcut(acc string) error {
 }
 
 func (s *Shell) SetImageShortcut(acc string) error {
-	return bind(&s.imageShortcut, acc, func() {
+	return bind(&s.imageShortcut, acc, locales.ImageShortcut(), func() {
 		if !s.core.Press(core.PictureShortcut) {
 			s.TranslateImage()
 		}
@@ -192,14 +198,16 @@ func (s *Shell) SetImageShortcut(acc string) error {
 }
 
 // bind makes acc the global shortcut that runs fn, in place of *held, the one registered before
-// ("" for none), which stays if acc cannot be registered.
-func bind(held *string, acc string, fn func()) error {
+// ("" for none), which stays if acc cannot be registered. what says what it does, where the
+// desktop binds the keys and asks the user about them (Wayland).
+func bind(held *string, acc, what string, fn func()) error {
+	opts := mygo.GlobalShortcutOptions{Description: what}
 	before := *held
 	if before != "" {
 		mygo.GlobalShortcut.Unregister(before)
 	}
-	if err := mygo.GlobalShortcut.Register(acc, fn); err != nil {
-		if before != "" && mygo.GlobalShortcut.Register(before, fn) != nil {
+	if err := mygo.GlobalShortcut.RegisterWith(acc, opts, fn); err != nil {
+		if before != "" && mygo.GlobalShortcut.RegisterWith(before, opts, fn) != nil {
 			*held = ""
 		}
 		return err

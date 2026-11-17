@@ -230,6 +230,7 @@ var platformFiles = []string{
 	"internal/ui/kit/shortcut.go",
 	"internal/ui/overlay/glass_darwin.go",
 	"internal/ui/overlay/glass_other.go",
+	"internal/ui/overlay/window_linux.go",
 	"internal/ui/overlay/window_other.go",
 	"internal/ui/overlay/window_windows.go",
 	"internal/ui/shared/platform.go",

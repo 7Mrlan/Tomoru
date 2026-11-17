@@ -43,6 +43,7 @@ func main() {
 	start := flag.Bool("start", false, "start translating at launch, whatever the settings say")
 	guide := flag.Bool("guide", false, "run the first-run guide again, as on a first launch")
 	flag.Parse()
+	useDesktop()
 	if !mygo.App.RequestSingleInstanceLock() {
 		return // the running one opens its settings
 	}
@@ -89,7 +90,7 @@ func main() {
 		// resume as the manager starts.
 		proxy.Install()
 		proxy.Set(p.NoProxy, p.ProxyURL)
-		deps := core.Deps{Context: ctx, Post: post,
+		deps := core.Deps{Context: ctx, Post: post, NoVoice: noVoice,
 			Proxy: proxy.Set, SystemProxy: func() string { return proxy.System("https://api.openai.com") },
 			EnginePath: func() (string, error) { return engine.Path(roots...) },
 			ASRPath:    func() (string, error) { return engine.ASRPath(roots...) }, PrefsPath: path, ScenesPath: scenesPath, HistoryDir: historyDir, StatsPath: statsPath, LogPath: logPath, LicensesDir: resource.Licenses(roots...), Version: mygo.App.Version(), OS: osVersion(), Login: mygo.App, Secrets: mygo.Secrets,

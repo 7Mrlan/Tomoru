@@ -119,8 +119,9 @@ func (c *Core) SetOpenAtLogin(on bool) {
 	c.changed()
 }
 
-// HasSample tells whether there are sample sentences to say in the spoken language.
-func (c *Core) HasSample() bool { return samples.Has(c.Prefs.Src) }
+// HasSample tells whether there are sample sentences to say in the spoken language, and a voice
+// to say them with.
+func (c *Core) HasSample() bool { return !c.deps.NoVoice && samples.Has(c.Prefs.Src) }
 
 // Speak says the sample sentences in the spoken language aloud, with the system's voice for it,
 // for translating to hear as it hears a video: the first-run guide tries translating with them.

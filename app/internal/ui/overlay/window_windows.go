@@ -28,3 +28,6 @@ func toolWindow(w *mygo.Window) {
 	setWindowLongPtr.Call(hwnd, gwlExStyle, ex|wsExToolWindow)
 	setWindowPos.Call(hwnd, 0, 0, 0, 0, 0, swpNoSize|swpNoMove|swpNoZOrder|swpNoActivate|swpFrameChanged)
 }
+
+// pointerUnseen: the system tells where the pointer is, over any window.
+const pointerUnseen = false

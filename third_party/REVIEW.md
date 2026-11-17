@@ -18,10 +18,11 @@ installer, with that release's license as `LICENSE-LLVM-OpenMP`. Tomoru pins
 
 ## MyGo source: resolved
 
-`app/go.mod` pins MyGo to the public release `v0.9.0`, the first Tomoru uses
-that places windows on Windows displays of different scales where they belong
-(MyGo `v0.8.0`). Its license files are those of `v0.7.3`, and it links no other
-modules into the app; the modules it adds to `go.mod` are its packaging tool's.
+`app/go.mod` pins MyGo to the public release `v0.9.2`, the first with all the
+Linux fixes Tomoru needs: subtitles on top under Wayland, and global shortcuts,
+menus and opened apps under XWayland. Its license files are those of `v0.7.3`,
+and it links no other modules into the app; the modules it adds to `go.mod` are
+its packaging tool's.
 The release check still rejects a local `replace` of MyGo.
 
 ## Model and native-library provenance to retain

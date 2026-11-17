@@ -25,3 +25,7 @@ func OnEach(mac, win, lin string) string {
 	}
 	return OnWindows(mac, win)
 }
+
+// HidesFromCapture tells whether the system keeps a window out of screenshots and recordings when
+// asked: Linux's desktops do not.
+var HidesFromCapture = !linux
