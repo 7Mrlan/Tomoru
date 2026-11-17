@@ -41,10 +41,10 @@ cd app && go tool mygo build -platform windows/amd64
 
 产物在 `app/build/windows-amd64/`（`Tomoru.exe` 与旁边的 `bin/`、`vad/`、`licenses/`），另有安装包 `tomoru-setup-<version>-amd64.exe`：在 Windows 上 MyGo 第一次会自己下载 NSIS；在 Mac 上要先装 NSIS（`brew install makensis`）。Windows 支持范围为 Windows 11 x64。「全部系统声音」用设备环回捕获默认播放设备，默认设备变化后会重新连接；单独输出到其他设备的应用不在捕获范围内。指定应用仍用进程环回，可能漏掉通信音频；遇到这种情况，把应用输出设为系统默认播放设备，并选择「全部系统声音」。进程环回 API 要求 [Windows build 20348 或更新](https://learn.microsoft.com/en-us/windows/win32/api/audioclientactivationparams/ns-audioclientactivationparams-audioclient_activation_params)，因此不支持 Windows 10。
 
-Linux 还在进行中（[#39](https://github.com/ACAne0320/Tomoru/issues/39)）：能收听全部系统声音、显示字幕，并框选屏幕翻译。它的引擎和 tomoru-asr 在 Linux x64 上构建（Ubuntu 22.04 或更新，PipeWire 或 PulseAudio），需要 C 编译器、pkg-config、libpulse 和 GTK 3 的头文件以及 patchelf；运行 app 需要 `libayatana-appindicator3-1` 来显示托盘图标：
+Linux 支持范围为 x64、Ubuntu 22.04 或同样新的发行版，GNOME 或 KDE 桌面，PipeWire 或 PulseAudio。它收听全部系统声音，也就是默认输出设备播放的声音，不能只听一个应用。它的引擎和 tomoru-asr 在 Linux x64 上构建，需要 C 编译器、pkg-config、libpulse 和 GTK 3 的头文件以及 patchelf；运行 app 需要 `libayatana-appindicator3-1` 来显示托盘图标；GNOME 以外的桌面在 Wayland 下还需要 `libgtk-layer-shell0`，字幕才能留在其他窗口之上（GNOME 上窗口走 XWayland）：
 
 ```sh
-sudo apt install build-essential pkg-config libpulse-dev libgtk-3-dev patchelf libayatana-appindicator3-1
+sudo apt install build-essential pkg-config libpulse-dev libgtk-3-dev patchelf libayatana-appindicator3-1 libgtk-layer-shell0
 scripts/setup.sh                 # linux-amd64：tomoru-engine、tomoru-asr、人声检测和 llama-server
 cd app && go tool mygo build -platform linux/amd64
 ```
@@ -94,10 +94,11 @@ go test ./...
 | 层级 | 作用 | 执行时机 |
 | --- | --- | --- |
 | 受影响包测试 | 验证当前行为、失败与取消路径 | 每次功能变更 |
-| `check.sh` | 格式、针对 macOS 和 Windows 的 vet 和 lint、无用代码、包边界和平台边界、设计规则、许可证、Swift 引擎的类型 | 每次代码变更、CI |
+| `check.sh` | 格式、针对 macOS、Windows 和 Linux 的 vet 和 lint、无用代码、包边界和平台边界、设计规则、许可证、Swift 引擎的类型 | 每次代码变更、CI |
 | `test.sh --race` | 业务规则、持久化、子进程、并发、协议实现、UI、Swift 契约 | 每次代码变更、CI、发布门槛 |
 | 人工录音与桌面验收 | 权限、真实录音、快捷键、跨屏字幕、退出、打包资源 | 发布前及平台行为变更 |
 | Windows 11 x64 实机 | 在 MSYS2 里运行 `scripts/check.sh go` 和 `scripts/test.sh go`（或用 `GOOS=windows GOARCH=amd64 go test -c` 交叉编译测试程序，在包目录运行）、引导全流程、采集、截图、托盘 | Windows 自己的代码（`engine/windows`、`capture`、`shell`）变更；发布前测上次发布以来的改动 |
+| Linux x64 实机桌面 | `scripts/check.sh go` 和 `scripts/test.sh go`、引导全流程、采集、截图、托盘的菜单和面板、快捷键，GNOME 和 KDE 各一遍：Wayland 和 X11 在权限、快捷键和窗口位置上不一样 | Linux 自己的代码（`engine/linux`、`shell`）变更；发布前测上次发布以来的改动 |
 | 选配真实评测 | 指定音频、模型或云端服务的质量与延迟 | 识别/断句/翻译效果变更 |
 
 其他改动在开发它的平台上测，PR 里写明还有哪些平台没测；发布时在其他平台补测。

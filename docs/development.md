@@ -70,14 +70,15 @@ The process-loopback API requires
 [Windows build 20348 or later](https://learn.microsoft.com/en-us/windows/win32/api/audioclientactivationparams/ns-audioclientactivationparams-audioclient_activation_params),
 so Windows 10 is not supported.
 
-Linux is in progress ([#39](https://github.com/ACAne0320/Tomoru/issues/39)): it hears all system
-sound, shows subtitles, and selects a part of the screen to translate. Its engine and tomoru-asr
-are built on Linux x64 (Ubuntu 22.04 or later, PipeWire or PulseAudio), which needs a C compiler,
+The supported Linux platform is x64, Ubuntu 22.04 or a distribution as new, with GNOME or KDE and
+PipeWire or PulseAudio. It hears all system sound, which is what the default output plays, not
+one app alone. Its engine and tomoru-asr are built on Linux x64, which needs a C compiler,
 pkg-config, libpulse's and GTK 3's headers and patchelf; running the app needs `libayatana-appindicator3-1`
-for its tray icon:
+for its tray icon, and outside GNOME `libgtk-layer-shell0` for the subtitles to stay over other
+windows under Wayland (on GNOME its windows go through XWayland):
 
 ```sh
-sudo apt install build-essential pkg-config libpulse-dev libgtk-3-dev patchelf libayatana-appindicator3-1
+sudo apt install build-essential pkg-config libpulse-dev libgtk-3-dev patchelf libayatana-appindicator3-1 libgtk-layer-shell0
 scripts/setup.sh                 # linux-amd64: tomoru-engine, tomoru-asr, the voice detector, llama-server
 cd app && go tool mygo build -platform linux/amd64
 ```
@@ -139,10 +140,11 @@ local ports. Tests use only local fake servers and need no external API by defau
 | Tier | What it covers | When |
 | --- | --- | --- |
 | Tests of affected packages | Current behavior, failure and cancellation paths | Every change |
-| `check.sh` | Formatting, vet and lint for macOS and Windows, unused code, package and platform boundaries, design rules, licenses, the Swift engine's types | Every code change; CI |
+| `check.sh` | Formatting, vet and lint for macOS, Windows and Linux, unused code, package and platform boundaries, design rules, licenses, the Swift engine's types | Every code change; CI |
 | `test.sh --race` | Domain rules, persistence, child processes, concurrency, the protocol implementations, the UI, the Swift contracts | Every code change; CI; the release gate |
 | Real audio and desktop acceptance | Permissions, real audio, shortcuts, subtitles across screens, quitting, packaged resources | Before a release, and when platform behavior changes |
 | A real Windows 11 x64 machine | `scripts/check.sh go` and `scripts/test.sh go` in MSYS2 (or test binaries cross-compiled with `GOOS=windows GOARCH=amd64 go test -c`, run in the package directory), the whole guide, capture, screen selection, the tray | Changes to Windows's own code (`engine/windows`, `capture`, `shell`); before a release, what changed since the last one |
+| A real Linux x64 desktop | `scripts/check.sh go` and `scripts/test.sh go`, the whole guide, capture, screen selection, the tray's menu and panel, the shortcuts, on GNOME and on KDE: Wayland and X11 differ in permissions, shortcuts and where windows go | Changes to Linux's own code (`engine/linux`, `shell`); before a release, what changed since the last one |
 | Optional real benchmark | Quality and latency with given audio, models or cloud services | Changes to recognition, segmenting or translation quality |
 
 Other changes are tested on the platform they were made on, and the pull request says which

@@ -2,7 +2,7 @@
 
 [English](release.md)
 
-怎样为 macOS 和 Windows 11 x64 构建并发布 Tomoru 的一个版本，让已安装的 app 更新到它。
+怎样为 macOS、Windows 11 x64 和 Linux x64 构建并发布 Tomoru 的一个版本，让已安装的 app 更新到它。
 
 贡献者在本机打包时，使用 [开发签名方式](development_zh.md#工具与启动)。下文的证书和更新密钥用于正式发布。
 
@@ -29,8 +29,8 @@
    git push origin v0.1.1
    ```
 
-   Release workflow 检查 tag 和版本号一致、changelog 里有这一节，用这一节加上安装包的下载链接（GitHub 的，以及给中国大陆用的官网链接）作说明创建草稿 release，然后同时在 macOS 和 Windows（MSYS2）上构建：`scripts/setup.sh`、许可证发布检查，再 `go tool mygo build -upload`，签名 app 和更新包并上传到草稿。带连字符的 tag（`v0.2.0-beta.1`）发成预发布版。某个平台失败时，点「Re-run failed jobs」重新构建它，上传到同一个草稿。
-4. 发布前先试用草稿里的文件。在 Mac 上用 `tomoru-<version>-arm64.dmg`：首次运行的权限、用 Apple 和本地识别听真实的声音、换语言和场景、快捷键、字幕位置、慢翻译之后的字幕记录、重开后的设置，以及工作中途退出。在 Windows 11 x64 上用 `tomoru-setup-<version>-amd64.exe`：从头走一遍引导、收听全部声音和单个应用、托盘的面板、快捷键、框选翻译、本地翻译模型，以及翻译中途退出。确认两边都能找到随包的引擎和库，且 `licenses/` 里有它们的 [许可证正文和声明](third-party-licenses_zh.md)：许可证检查只看打包前的资源，不看安装包。另外，上次发布以来写明某个平台没测的 PR，要在那个平台上补测。
+   Release workflow 检查 tag 和版本号一致、changelog 里有这一节，用这一节加上安装包的下载链接（GitHub 的，以及给中国大陆用的官网链接）作说明创建草稿 release，然后依次在 macOS、Windows（MSYS2）和 Linux（Ubuntu 22.04）上构建：`scripts/setup.sh`、许可证发布检查，再 `go tool mygo build -upload`，签名 app 和更新包并上传到草稿。带连字符的 tag（`v0.2.0-beta.1`）发成预发布版。某个平台失败时，点「Re-run failed jobs」重新构建它，上传到同一个草稿。
+4. 发布前先试用草稿里的文件。在 Mac 上用 `tomoru-<version>-arm64.dmg`：首次运行的权限、用 Apple 和本地识别听真实的声音、换语言和场景、快捷键、字幕位置、慢翻译之后的字幕记录、重开后的设置，以及工作中途退出。在 Windows 11 x64 上用 `tomoru-setup-<version>-amd64.exe`：从头走一遍引导、收听全部声音和单个应用、托盘的面板、快捷键、框选翻译、本地翻译模型，以及翻译中途退出。在 Linux x64 上，GNOME 和 KDE 各一遍，用 `install.sh` 装的和 `tomoru_<version>_amd64.deb`：从头走一遍引导、收听全部声音、托盘的菜单和面板、快捷键、框选翻译、本地翻译模型，以及翻译中途退出。确认三个平台都能找到随包的引擎和库，且 `licenses/` 里有它们的 [许可证正文和声明](third-party-licenses_zh.md)：许可证检查只看打包前的资源，不看安装包。另外，上次发布以来写明某个平台没测的 PR，要在那个平台上补测。
 5. 在 GitHub 上发布草稿。已安装的 app 在启动后不久检查一次，之后每天一次，那时就会发现它。半小时内官网会把它的安装包复制到 R2，下载按钮随之给出新版（[site/README_zh.md](../site/README_zh.md)）。
 
 ## 手动构建
@@ -54,12 +54,23 @@ cd app
 MYGO_UPDATER_PRIVATE_KEY="$(cat ~/.config/tomoru/update-keys/mygo-update.key)" go tool mygo build -upload
 ```
 
-之后 `build/darwin-arm64/` 里有 app、磁盘映像、更新包、相对之前版本的增量包、`update-darwin-arm64.json` 和 `install.sh`；`build/windows-amd64/` 里有 `Tomoru.exe` 和旁边的 `bin/`、`vad/`、`licenses/`，以及安装包。Windows 版没有签名：SmartScreen 会在第一次启动时警告（点「更多信息」，再点「仍要运行」）。
+在 Linux x64 上，用 Ubuntu 22.04 构建，这样产物在它和更新的系统上都能运行，工具见 [开发指南](development_zh.md#工具与启动)：
+
+```sh
+scripts/setup.sh
+scripts/package-licenses.sh --release-check linux-amd64
+cd app
+MYGO_UPDATER_PRIVATE_KEY="$(cat ~/.config/tomoru/update-keys/mygo-update.key)" go tool mygo build -upload
+```
+
+之后 `build/darwin-arm64/` 里有 app、磁盘映像、更新包、相对之前版本的增量包、`update-darwin-arm64.json` 和 `install.sh`；`build/windows-amd64/` 里有 `Tomoru.exe` 和旁边的 `bin/`、`vad/`、`licenses/`，以及安装包；`build/linux-amd64/` 里有 `tomoru` 和旁边同样的几个目录、它的 `tar.gz`（`install.sh` 和更新程序安装的就是它），以及 Debian 包。Windows 版没有签名：SmartScreen 会在第一次启动时警告（点「更多信息」，再点「仍要运行」）。
 
 ## 用户第一次要做的
 
 app 有签名但没有公证：macOS 会在第一次启动时拦下它。在下载页上写明：
 
 > 打开 Tomoru。macOS 提示无法验证它时，打开 系统设置 › 隐私与安全性，点 Tomoru 旁边的「仍要打开」。
+
+Linux 上没有东西拦它。它的 Debian 包不会自己更新：写明用 `install.sh` 装的会。
 
 更新不需要用户做什么：更新程序检查它们的签名，app 的证书不变，权限也就保留。
