@@ -33,7 +33,8 @@ the app changes (models, sizes, settings names, permissions).
 
 ## Downloads
 
-`/download/mac` and `/download/windows` give the latest installer for the system. Visitors in
+`/download/mac`, `/download/windows` and `/download/linux` give the latest installer for the system
+(on Linux, the Debian package). Visitors in
 mainland China, where GitHub is often slow, get it from the R2 bucket `tomoru-releases`; others
 are sent to the GitHub release. `?from=github` or `?from=cloudflare` picks the source, for the
 line under the download buttons. `main.js` points the buttons at the visitor's system; without

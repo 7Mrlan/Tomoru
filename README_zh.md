@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/ACAne0320/Tomoru/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/ACAne0320/Tomoru?include_prereleases&amp;label=release&amp;color=f5a524&amp;labelColor=1f1e4e"></a>
-  <img alt="macOS and Windows" src="https://img.shields.io/badge/platform-macOS_%7C_Windows-fbf6ec?labelColor=1f1e4e">
+  <img alt="macOS, Windows and Linux" src="https://img.shields.io/badge/platform-macOS_%7C_Windows_%7C_Linux-fbf6ec?labelColor=1f1e4e">
   <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0-fbf6ec?labelColor=1f1e4e"></a>
 </p>
 
@@ -33,7 +33,7 @@
 - **本机或云端，自己决定**：语音识别和翻译都可以完全在本机离线运行，也可以使用云端服务。选择本地时，声音和文字不会离开你的电脑；选择云端时，数据只会发送给你所选的云端服务。
 - **抢先翻译**：不等对方把整句话说完，先实时显示前半句的大意，说完后再更新为完整译文，看直播不用干等。
 - **翻译场景和专名对照表**：语音识别容易把角色或招式听成近音词（比如把「ニンフィア（仙子伊布）」听成「インフィア」、把「メテオ（陨石）」听成「メデオ」），翻译模型也常把名字按字面硬翻（比如把「クラウド（克劳德）」译成「云」）。你可以按常看的番剧、主播或游戏建「场景」词表，不仅保证译名统一，连识别听错的原文字幕也会一起改对；接上你自己的对话 API，还能从字幕记录里学到新名字。
-- **顺手翻译屏幕上的文字**：遇到没配音的游戏对话框、视频里的招牌或直播间弹幕，按 `⌥⇧S`（Windows 为 `Alt+Shift+S`）直接框选屏幕，或先截图再按快捷键，就能看到译文。
+- **顺手翻译屏幕上的文字**：遇到没配音的游戏对话框、视频里的招牌或直播间弹幕，按 `⌥⇧S`（Windows 和 Linux 为 `Alt+Shift+S`）直接框选屏幕，或先截图再按快捷键，就能看到译文。
 - 界面支持简体中文、繁体中文、英文、日文和韩文；支持浅色和深色外观。
 
 ## 下载
@@ -44,15 +44,18 @@
 |---|---|
 | macOS | macOS 26 或更新，Apple 芯片 |
 | Windows | Windows 11，x64 |
+| Linux | x64，Ubuntu 22.04 或同样新的发行版；GNOME 或 KDE 桌面 |
 
 Tomoru 目前没有经过 Apple 公证，Windows 版也没有签名，所以第一次打开要多一步：
 - **macOS**：打开 Tomoru。macOS 提示无法验证它时，打开 系统设置 › 隐私与安全性，点 Tomoru 旁边的「仍要打开」。之后 Tomoru 只申请「仅系统录音」权限，用来听播放的声音。
 - **Windows**：SmartScreen 警告时，点「更多信息」，再点「仍要运行」。
 
-也可以在终端里安装：脚本会下载最新版本，校验无误后安装。在 Mac 上装到「应用程序」。这样装，打开时不用再点「仍要打开」或「仍要运行」。
+Linux 上用下面的脚本安装：不需要 root，各发行版都能用，装好后会自动更新。Release 里也有 Debian 包，它不会自动更新。托盘图标要用 `libayatana-appindicator3`，GNOME 上还要有 AppIndicator 扩展（Ubuntu 自带）。GNOME 以外的桌面要装 `libgtk-layer-shell0`，字幕才能留在其他窗口之上，Debian 包会自动装上。Linux 上听的是全部系统声音，还不能只听一个应用；在 Wayland 上，框选屏幕前桌面会问一次是否允许截图。
+
+也可以在终端里安装：脚本会下载最新版本，校验无误后安装。在 Mac 上装到「应用程序」，在 Linux 上装到 `~/.local/tomoru.app`。这样装，打开时不用再点「仍要打开」或「仍要运行」。
 
 ```sh
-# macOS
+# macOS 和 Linux
 curl -fsSL https://github.com/ACAne0320/Tomoru/releases/latest/download/install.sh | sh
 ```
 
@@ -98,6 +101,19 @@ cd app
 go tool mygo dev                              # 运行；改代码后自动重新构建并重启
 go test ./...                                 # 测试
 go tool mygo build                            # 打包到 app/build/windows-amd64/
+```
+
+### Linux
+
+需要 Linux x64（Ubuntu 22.04 或更新，或同样新的发行版）、Go 1.27.3 或更新版本、C 编译器、pkg-config、libpulse 和 GTK 3 的头文件以及 patchelf。在 Debian 和 Ubuntu 上：
+
+```sh
+sudo apt install build-essential pkg-config libpulse-dev libgtk-3-dev patchelf libayatana-appindicator3-1 libgtk-layer-shell0
+scripts/setup.sh              # 引擎、本机识别、人声检测和 llama-server
+cd app
+go tool mygo dev              # 运行；改代码后自动重新构建并重启
+go test ./...                 # 测试
+go tool mygo build            # 打包到 app/build/linux-amd64/
 ```
 
 检查和测试见 [开发指南](docs/development_zh.md)，代码在哪里见 [架构](docs/architecture_zh.md)。

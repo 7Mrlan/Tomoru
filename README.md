@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/ACAne0320/Tomoru/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/ACAne0320/Tomoru?include_prereleases&amp;label=release&amp;color=f5a524&amp;labelColor=1f1e4e"></a>
-  <img alt="macOS and Windows" src="https://img.shields.io/badge/platform-macOS_%7C_Windows-fbf6ec?labelColor=1f1e4e">
+  <img alt="macOS, Windows and Linux" src="https://img.shields.io/badge/platform-macOS_%7C_Windows_%7C_Linux-fbf6ec?labelColor=1f1e4e">
   <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0-fbf6ec?labelColor=1f1e4e"></a>
 </p>
 
@@ -48,7 +48,7 @@ your screen.
   streamers or games you watch: names stay consistent, misheard originals get fixed too, and with
   your own chat API, Tomoru can learn new names from your subtitle history.
 - **Translate text on screen too**: unvoiced game dialogue, signs in a video, stream chat. Press
-  `⌥⇧S` (`Alt+Shift+S` on Windows) and select part of the screen, or take a screenshot first and
+  `⌥⇧S` (`Alt+Shift+S` on Windows and Linux) and select part of the screen, or take a screenshot first and
   press the shortcut, and the translation shows up.
 - In English, Simplified and Traditional Chinese, Japanese and Korean, light and dark.
 
@@ -61,6 +61,7 @@ updates itself after that.
 |---|---|
 | macOS | macOS 26 or later, Apple silicon |
 | Windows | Windows 11, x64 |
+| Linux | x64, Ubuntu 22.04 or a distribution as new; GNOME or KDE |
 
 Tomoru isn't notarized by Apple or signed for Windows yet, so the first launch needs one extra step:
 - **macOS**: open Tomoru. When macOS says it can't verify it, open System Settings › Privacy &
@@ -68,12 +69,19 @@ Tomoru isn't notarized by Apple or signed for Windows yet, so the first launch n
   Recording, to hear what plays.
 - **Windows**: when SmartScreen warns, click "More info", then "Run anyway".
 
+On Linux, install with the script below: it needs no root, works on any distribution, and what it
+installs updates itself. The release also has a Debian package, which doesn't update itself. The
+tray icon needs `libayatana-appindicator3`, and on GNOME the AppIndicator extension (Ubuntu ships
+it). Outside GNOME, the subtitles stay over other windows with `libgtk-layer-shell0`, which the
+Debian package installs. Linux hears all system sound, not one app alone yet; on Wayland, selecting part of the screen
+asks once for permission to take screenshots.
+
 Or install from a terminal: the script downloads the latest version, checks it, and
-installs it. On a Mac it goes in /Applications. Either way it opens without the "Open Anyway" or
+installs it. On a Mac it goes in /Applications, on Linux in `~/.local/tomoru.app`. Either way it opens without the "Open Anyway" or
 SmartScreen step.
 
 ```sh
-# macOS
+# macOS and Linux
 curl -fsSL https://github.com/ACAne0320/Tomoru/releases/latest/download/install.sh | sh
 ```
 
@@ -131,6 +139,20 @@ cd app
 go tool mygo dev                              # run it; it rebuilds and restarts as you edit
 go test ./...                                 # test it
 go tool mygo build                            # package it into app/build/windows-amd64/
+```
+
+### Linux
+
+Needs Linux x64 (Ubuntu 22.04 or later, or a distribution as new), Go 1.27.3 or later, a C
+compiler, pkg-config, the headers of libpulse and GTK 3, and patchelf. On Debian and Ubuntu:
+
+```sh
+sudo apt install build-essential pkg-config libpulse-dev libgtk-3-dev patchelf libayatana-appindicator3-1 libgtk-layer-shell0
+scripts/setup.sh              # the engine, local recognition, voice detector and llama-server
+cd app
+go tool mygo dev              # run it; it rebuilds and restarts as you edit
+go test ./...                 # test it
+go tool mygo build            # package it into app/build/linux-amd64/
 ```
 
 The [development guide](docs/development.md) has the checks and tests, and the

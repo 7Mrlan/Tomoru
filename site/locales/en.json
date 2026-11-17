@@ -40,7 +40,7 @@
     },
     "systems": {
       "q": "Which platforms are supported?",
-      "a": "macOS 26 or later (Apple silicon), and Windows 11 (x64)."
+      "a": "macOS 26 or later (Apple silicon), Windows 11 (x64), and Linux (x64; Ubuntu 22.04 or a distribution as new, with GNOME or KDE)."
     },
     "languages": {
       "q": "Which languages are supported?",
@@ -64,7 +64,7 @@
   },
   "meta": {
     "title": "Tomoru: Live Subtitles & Real-Time Translation for Your PC",
-    "description": "Tomoru captures system audio and generates floating bilingual subtitles in real time. For live streams, anime, and games—if your computer plays sound, Tomoru translates it. Fully open-source and free on macOS and Windows.",
+    "description": "Tomoru captures system audio and generates floating bilingual subtitles in real time. For live streams, anime, and games—if your computer plays sound, Tomoru translates it. Fully open-source and free on macOS, Windows and Linux.",
     "ogTitle": "Tomoru: Live Subtitles for Anything You Watch",
     "ogDescription": "Captures system audio and generates real-time floating bilingual subtitles. Live streams, anime, games—if there's sound, there are subtitles.",
     "ogImageAlt": "Tomoru and Rubi the penguin looking up at a Japanese line and its amber English translation",
@@ -88,14 +88,14 @@
     "claim": "Subtitles for anything you watch.",
     "lead": "Captures your computer's audio and generates floating bilingual subtitles in real time. Ready for foreign streams, raw anime, games, and international meetings.",
     "download": "Free Download",
-    "platforms": "macOS and Windows",
+    "platforms": "macOS, Windows and Linux",
     "altSource": "Slow download? Try",
     "source": "Source Code",
     "factsLabel": "Highlights",
     "facts": {
       "languages": "31 languages",
       "engines": "Local or cloud",
-      "systems": "macOS / Windows",
+      "systems": "macOS / Windows / Linux",
       "license": "Open-source GPL-3.0"
     },
     "visualLabel": "Bilingual subtitles floating over a live stream window: Japanese original in white, English translation in amber, new lines appearing from below as older lines push up",
@@ -114,6 +114,7 @@
     "rollLang": "ja",
     "forMac": "For macOS · Apple silicon",
     "forWindows": "For Windows 11 · x64",
+    "forLinux": "For Linux · x64 (.deb)",
     "copied": "Copied",
     "roll": [
       {
@@ -301,7 +302,7 @@
     "picture": {
       "tag": "Screen OCR Translation",
       "title": "Select any silent text to translate",
-      "body": "For unvoiced dialogue, signs in videos, or stream chat, press <kbd>⌥⇧S</kbd> (<kbd>Alt+Shift+S</kbd> on Windows) and select a region on screen to translate it instantly. With local models, OCR runs entirely on your device.",
+      "body": "For unvoiced dialogue, signs in videos, or stream chat, press <kbd>⌥⇧S</kbd> (<kbd>Alt+Shift+S</kbd> on Windows and Linux) and select a region on screen to translate it instantly. With local models, OCR runs entirely on your device.",
       "artLabel": "Pressing the shortcut and selecting Japanese game dialogue displays the English translation above",
       "srcLang": "ja",
       "srcName": "エルナ",
@@ -318,9 +319,9 @@
     "title": "Three steps to live subtitles",
     "install": {
       "title": "Download & run",
-      "body": "Double-click the installer (if prompted, click “Open Anyway”); or run a single-line script in your terminal to skip security prompts."
+      "body": "Double-click the installer (if prompted, click “Open Anyway”); or run a single-line script in your terminal to skip security prompts. On Linux, prefer the script: what it installs updates itself, and the .deb package doesn't."
     },
-    "copyMac": "Copy macOS install command",
+    "copyMac": "Copy macOS and Linux install command",
     "copyWindows": "Copy Windows install command (PowerShell)",
     "copy": "Copy",
     "choose": {
@@ -365,7 +366,7 @@
   },
   "callback": {
     "lead": "After downloading, the app updates itself.",
-    "req": "macOS 26 or later · Apple silicon　|　Windows 11 · x64",
+    "req": "macOS 26 or later · Apple silicon　|　Windows 11 · x64　|　Linux · x64",
     "peekAlt": "Tomoru and Rubi the penguin peeking out from the bottom of the screen"
   },
   "footer": {

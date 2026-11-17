@@ -19,7 +19,7 @@
 
 ## 下载
 
-`/download/mac` 和 `/download/windows` 给出对应系统最新的安装包。中国大陆访问 GitHub 常常很慢，那里的访客从 R2 存储桶 `tomoru-releases` 下载，别处的跳到 GitHub Release。`?from=github` 或 `?from=cloudflare` 指定来源，供下载按钮下面那一行用。`main.js` 把按钮指向访客的系统；没有它时按钮打开最新版本的 Release 页面。
+`/download/mac`、`/download/windows` 和 `/download/linux` 给出对应系统最新的安装包（Linux 是 Debian 包）。中国大陆访问 GitHub 常常很慢，那里的访客从 R2 存储桶 `tomoru-releases` 下载，别处的跳到 GitHub Release。`?from=github` 或 `?from=cloudflare` 指定来源，供下载按钮下面那一行用。`main.js` 把按钮指向访客的系统；没有它时按钮打开最新版本的 Release 页面。
 
 定时触发器每半小时把 GitHub 上最新发布的版本（不含草稿和预发布）的安装包复制进存储桶，按它的 `SHA256SUMS` 校验，然后把 `latest.json` 换成它，上一版留着，让正在下载的人下完。本地运行 `npx wrangler dev`，再 `curl "localhost:8787/cdn-cgi/handler/scheduled"` 就能跑一次复制。
 
