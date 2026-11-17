@@ -24,13 +24,14 @@ body:
       options:
         - macOS
         - Windows
+        - Linux
     validations:
       required: true
   - type: input
     id: os
     attributes:
       label: OS version and computer / 系统版本和电脑
-      placeholder: "macOS 26.1, MacBook Air M3 / Windows 11 24H2, RTX 4060"
+      placeholder: "macOS 26.1, MacBook Air M3 / Windows 11 24H2, RTX 4060 / Ubuntu 24.04, GNOME on Wayland, GTX 1650"
   - type: input
     id: engines
     attributes:
