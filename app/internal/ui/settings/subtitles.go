@@ -165,6 +165,9 @@ func (s *Settings) styleShow(c *ui.Context, p *prefs.Prefs) {
 		})
 		i++
 	}
+	if !shared.HidesFromCapture {
+		return
+	}
 	kit.SettingRow(c, i, locales.HideFromCapture(), "", func() {
 		if kit.Switch(c, &p.HideFromCapture, locales.HideFromCapture()).Changed() {
 			s.nav.SetHideFromCapture(p.HideFromCapture)

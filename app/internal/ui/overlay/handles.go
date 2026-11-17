@@ -22,14 +22,18 @@ import (
 // moment, and the block has to show something (subtitles, or its frame while adjusting). Locked,
 // resting there shows the lock above the block, which alone takes clicks; it goes
 // again once the pointer stays still for a while, so that a pointer left over a video shows
-// nothing, and shows only after the pointer has left the block it was locked from. It runs on a
-// goroutine of its own.
+// nothing, and shows only after the pointer has left the block it was locked from. Where the
+// system tells where the pointer is only over the app's own windows (pointerUnseen), the unlocked
+// block takes the mouse while it shows something, and tells by its hover that the pointer is on
+// it, until the pointer has not moved for a while: XWayland does not tell an X11 window that the
+// pointer left it for a Wayland one. Locked, it cannot show the lock. It runs on a goroutine of its
+// own.
 func (o *Overlay) watchPointer() {
 	const dwell, still, linger, peekFor = 400 * time.Millisecond, 8, 500 * time.Millisecond, 3 * time.Second
 	hover, peek, armed := false, false, false
 	taking := []mygo.Rectangle{} // the part of the overlay that takes the mouse, as last set
-	var left, restAt time.Time
-	var restP mygo.Point
+	var left, restAt, movedAt time.Time
+	var restP, lastP mygo.Point
 	ticker := time.NewTicker(50 * time.Millisecond)
 	defer ticker.Stop()
 	for {
@@ -42,6 +46,12 @@ func (o *Overlay) watchPointer() {
 		b, lock := o.blockRect(o.win.Bounds())
 		locked := o.locked.Load()
 		over := within(p, b)
+		if p != lastP {
+			lastP, movedAt = p, time.Now()
+		}
+		if pointerUnseen && !locked {
+			over = o.pointerOn.Load() && time.Since(movedAt) < peekFor
+		}
 		in := over && (hover || peek || o.grabbable.Load())
 		switch {
 		case !in:
@@ -67,7 +77,7 @@ func (o *Overlay) watchPointer() {
 		}
 		// What takes the mouse: the system lets the rest through, and switches as the pointer comes
 		// in or leaves, at once, rather than at the next tick here.
-		region := inputRegion(h, pk, o)
+		region := inputRegion(h || pointerUnseen && !locked && o.grabbable.Load(), pk, o)
 		if h != hover || pk != peek || !slices.Equal(region, taking) {
 			hover, peek, taking = h, pk, region
 			o.win.Update(func() {
@@ -104,7 +114,7 @@ func (o *Overlay) hitArea() (block, lock mygo.Rectangle) {
 }
 
 // inputRegion is the part of the overlay that takes the mouse: the block with its toolbar while
-// hovered, the lock alone while it shows, else none.
+// hovered, or unlocked where the pointer is unseen, the lock alone while it shows, else none.
 func inputRegion(hover, peek bool, o *Overlay) []mygo.Rectangle {
 	hit, lock := o.hitArea()
 	switch {

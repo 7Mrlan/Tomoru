@@ -39,6 +39,7 @@ type Overlay struct {
 	// frame of adjusting. An empty block does not answer the pointer passing by.
 	grabbable atomic.Bool
 	adjusting atomic.Bool // the frame shows: the pointer need not rest to grab it
+	pointerOn atomic.Bool // the overlay has the pointer, where the system tells no other (pointerUnseen)
 	mu        sync.Mutex  // guards block, which the pointer watcher reads
 	block     ui.Rect     // the subtitle block in the overlay, with its toolbar, as last laid out
 	lock      ui.Rect     // the lock above the locked block while it shows, as last laid out
@@ -245,7 +246,8 @@ func (o *Overlay) View(c *ui.Context) {
 		h = o.hoverH
 	}
 	var hit ui.Rect // what the pointer finds: the block, and the toolbar above it while hovered
-	ui.Box(c).Absolute().Left(left).Width(width).Top(0).Bottom(0).Children(func() {
+	column := ui.Box(c.Key("column")).Absolute().Left(left).Width(width).Top(0).Bottom(0)
+	column.Children(func() {
 		block := ui.Box(c.Key("block")).Absolute().Left(0).Right(0).Bottom(bottom).Height(h).Radius(14).
 			Background(ui.Transparent).Border(1, ui.Transparent).Transition(subtitle.Follows)
 		switch {
@@ -340,6 +342,7 @@ func (o *Overlay) View(c *ui.Context) {
 		o.block, o.lock = hit, lock
 		o.mu.Unlock()
 	})
+	o.pointerOn.Store(column.Hovered()) // it takes the mouse only where the block is
 }
 
 // notice is what shows where the subtitles go, while none do, about translating: that it is

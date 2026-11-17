@@ -56,6 +56,8 @@ type Deps struct {
 	// Version is the app's, OS the system's with its version, as "macOS 26.1": what a report of a
 	// problem says.
 	Version, OS string
+	// NoVoice tells that the engine says nothing aloud, as Linux's: no sample is played.
+	NoVoice bool
 	// EnginePath finds the engine, ASRPath tomoru-asr.
 	EnginePath, ASRPath func() (string, error)
 	// StartSession starts a translating session.

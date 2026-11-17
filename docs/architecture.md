@@ -140,7 +140,10 @@ where the selection was: on macOS it runs the system's `screencapture`, on Windo
 selection window; on Linux its own too, over a screenshot); `resource.Hide` (no console window for child
 processes on Windows); the tray icon (tinted for light and dark on Windows; on both macOS and
 Windows, a click opens the panel and a right click opens the system menu; on Linux a click opens
-the menu, which shows the panel, as AppIndicator tells no clicks); and a little platform wording
+the menu, which shows the panel, as AppIndicator tells no clicks); on Linux the windows' display
+(`desktop_linux.go`: X11 through XWayland on GNOME, which keeps no Wayland window over others) and
+the overlay's pointer (`overlay/window_linux.go`: under Wayland the app hears it only over its own
+windows); and a little platform wording
 (`ui/shared.OnWindows` and `OnEach`). Windows and Linux have no system recognizer, so at first no
 recognition is chosen (`prefs.DefaultASR` is empty and starting
 reports `core.ErrNoASR`); the user picks a local model (downloaded only once chosen) or cloud

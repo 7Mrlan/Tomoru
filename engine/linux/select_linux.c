@@ -294,20 +294,16 @@ static void realized(GtkWidget *w, gpointer data) {
 
 int tc_select(const char *app, const char *out, int *x, int *y, int *w, int *h, char *why, int n) {
 	memset(&sel, 0, sizeof sel);
-	// Under Wayland, the picture and the windows are Wayland's, not XWayland's, which sees only
-	// X11 windows.
-	if (g_getenv("WAYLAND_DISPLAY")) g_setenv("GDK_BACKEND", "wayland", TRUE);
+	// Under Wayland the picture is the portal's: XWayland sees only X11 windows. The windows are
+	// of the display the app chose (GDK_BACKEND): XWayland's under GNOME, which gives a program's
+	// new Wayland window no focus and puts it under the window in use, and lets an X11 one over.
+	int wayland = g_getenv("WAYLAND_DISPLAY") != NULL;
 	if (!gtk_init_check(NULL, NULL)) {
 		snprintf(why, n, "no display to select on");
 		return -1;
 	}
 	GdkDisplay *display = gdk_display_get_default();
-#ifdef GDK_WINDOWING_X11
-	int x11 = GDK_IS_X11_DISPLAY(display);
-#else
-	int x11 = 0;
-#endif
-	sel.shot = x11 ? root_shot(why, n) : portal_shot(app, why, n);
+	sel.shot = wayland ? portal_shot(app, why, n) : root_shot(why, n);
 	if (!sel.shot) return -1;
 
 	// The screens' layout, in logical pixels, which the picture covers whole.
@@ -344,7 +340,13 @@ int tc_select(const char *app, const char *out, int *x, int *y, int *w, int *h, 
 		gtk_window_fullscreen_on_monitor(GTK_WINDOW(win), screen, i);
 		gtk_widget_show(win);
 	}
-	gtk_window_present(GTK_WINDOW(windows[0]));
+#ifdef GDK_WINDOWING_X11
+	// With the server's time, an X11 window manager takes the windows for the user's doing.
+	if (GDK_IS_X11_DISPLAY(display))
+		gtk_window_present_with_time(GTK_WINDOW(windows[0]), gdk_x11_get_server_time(gtk_widget_get_window(windows[0])));
+	else
+#endif
+		gtk_window_present(GTK_WINDOW(windows[0]));
 	while (!sel.done) gtk_main_iteration();
 
 	int result = 0;

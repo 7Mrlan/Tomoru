@@ -6867,24 +6867,6 @@ func (msgs Messages) OpenPanel() string {
 	return Catalog.Format(msgs.locale, "openPanel", nil)
 }
 
-// SampleNoVoiceLinux says "Tomoru can't say the sample on Linux yet. Play a video in {language} instead."
-// in the language the app shows.
-//
-// Guide, try step, on Linux, which has no voice for the app to say the
-// sample with.
-func SampleNoVoiceLinux(language string) string {
-	return In(i18n.Locale()).SampleNoVoiceLinux(language)
-}
-
-// SampleNoVoiceLinux says "Tomoru can't say the sample on Linux yet. Play a video in {language} instead."
-// in the language of msgs.
-//
-// Guide, try step, on Linux, which has no voice for the app to say the
-// sample with.
-func (msgs Messages) SampleNoVoiceLinux(language string) string {
-	return Catalog.Format(msgs.locale, "sampleNoVoiceLinux", map[string]any{"language": language})
-}
-
 // GuideReadyTray says "Click Tomoru's icon in the corner of the taskbar to change languages and what to hear; right-click it to start transl…"
 // in the language the app shows.
 //
