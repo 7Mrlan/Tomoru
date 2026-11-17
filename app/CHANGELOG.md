@@ -1,11 +1,12 @@
 # Changelog
 
-## 0.2.0-beta.1
+## 0.2.0
 
 Tomoru runs on Linux: subtitles for what the computer plays, and selecting part of the screen to
-translate. This beta is for trying it on Linux x64 with GNOME or KDE, Ubuntu 22.04 or a
-distribution as new. Subtitles can also take any font installed, and how faint their text, box and
-earlier lines are is up to you.
+translate, on Linux x64 with GNOME or KDE, Ubuntu 22.04 or a distribution as new. With SenseVoice
+or Qwen3-ASR, the language spoken can be Auto-detect, for a stream or an interview that changes
+language. Subtitles can also take any font installed, and how faint their text, box and earlier
+lines are is up to you.
 
 On Linux, the tray icon needs `libayatana-appindicator3`, and on GNOME the AppIndicator extension
 (Ubuntu ships it). Outside GNOME, the subtitles stay over other windows with `libgtk-layer-shell0`,
@@ -17,6 +18,10 @@ selecting part of the screen asks once for permission to take screenshots.
 - Linux x64: hearing the default output, subtitles over other windows and fullscreen video, the
   tray's menu and panel, the shortcuts, and selecting part of the screen to translate.
   ([#50](https://github.com/ACAne0320/Tomoru/pull/50), [#52](https://github.com/ACAne0320/Tomoru/pull/52), [#58](https://github.com/ACAne0320/Tomoru/pull/58), [#59](https://github.com/ACAne0320/Tomoru/pull/59))
+- The language spoken can be Auto-detect with SenseVoice and Qwen3-ASR: each line is translated from
+  the language it was said in, as when a streamer goes from Chinese to Korean to English. A line
+  already in the language translated into shows once, in the translation's style.
+  ([#61](https://github.com/ACAne0320/Tomoru/pull/61))
 - Subtitle style › Font › More fonts…: any font installed, found by name, each previewed in the
   subtitles' language. ([#47](https://github.com/ACAne0320/Tomoru/pull/47))
 - Subtitle style has sliders for the opacity of the text, of the box, and of earlier lines.
