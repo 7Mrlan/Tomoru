@@ -48,7 +48,13 @@ func (s *Settings) learnFrom(paths []string, id string) {
 	if _, ok := k.SceneByID(id); !ok {
 		id = "" // its scene was deleted: the names go to the general one, or where the user says
 	}
-	e := learnEdit{open: true, paths: slices.Clone(paths), scene: id, target: id}
+	// The general scene's names go with whatever is watched: those of one video go to a scene of
+	// their own, unless the user says otherwise.
+	target := id
+	if id == "" {
+		target = newTarget
+	}
+	e := learnEdit{open: true, paths: slices.Clone(paths), scene: id, target: target}
 	eps := k.ChatEndpoints()
 	if i := slices.IndexFunc(eps, func(e prefs.Endpoint) bool { return e.ID == k.Preferences().Learn }); i >= 0 {
 		e.endpoint = eps[i].ID

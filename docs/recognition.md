@@ -183,9 +183,11 @@ streaming (local-asr.md), moved into the app and made general:
   at the next pause, so that later decodes don't have to find it in their text.
 - **Load**: one decode in flight. When decoding can't keep up, volatile decodes are skipped, never
   queued; finals always run.
-- **Noise**: a final the model labels with no language (Qwen3-ASR's `language None`) is dropped,
-  as is text of punctuation alone. Words in another script stay: Japanese and Korean dialogue has
-  real English words ("OK", "Yes"), and dropping them needs a benchmark first.
+- **Noise**: a stretch the model labels with no language (Qwen3-ASR's `language None`) is dropped,
+  as is text of punctuation alone, and an answer longer than speech can be (see the adapter). The
+  model must be left free to say so: its answer is never started for it. Words in another script
+  stay: Japanese and Korean dialogue has real English words ("OK", "Yes"), and dropping them needs
+  a benchmark first.
 
 `tomoru-asr` becomes a decoder: `tomoru-asr serve --model <dir>` reads
 `{"type":"decode","id":7,"lang":"ja","final":true,"pcm":"…"}` and answers
@@ -371,7 +373,9 @@ Step 6, OpenAI Realtime, done 2026-10-31 (the quick set on the M5, 4 cases at on
 The scene's glossary corrects names after recognition, and gives them to translation
 ([scenes](scenes.md)). Recognition is told them too, as a session starts: `asr.Env.Scene`, the
 names as said (the user's own first) and the scene's description. There is no setting for it:
-each adapter gives its model what it takes, and those that take nothing hear without.
+each adapter gives its model what it takes, and those that take nothing hear without. The general
+scene's names are not told: they go with whatever is watched, and one video's names, over
+another's crowd, were written as its subtitles.
 
 | Adapter | Told |
 |---|---|
@@ -384,7 +388,16 @@ each adapter gives its model what it takes, and those that take nothing hear wit
 Measured 2026-10-31 on the Sekiro case, with a scene of seven names, two of them said (一心, 葦名):
 OpenAI's live transcription wrote アシュナ without, 葦名 with; its transcription API アシナ, then
 葦名; Qwen cloud had both right without; Qwen3-ASR wrote アシナ either way. No engine wrote a
-name that was not said.
+name that was not said, in that case.
+
+Measured again 2026-11-15, after Qwen3-ASR wrote a scene's names as subtitles, unsaid, over the
+crowd of a tournament's ceremony (8 times in 5 sessions on one computer). Its answer was started
+for it with the language, so it could not say it heard no speech, and wrote its system message
+instead, or a sentence made of it; it may answer `None` since (see the adapter). With 23 names of
+another video, over 257 windows of 4 s from 13 benchmark cases, it wrote names nobody said in 7
+before and in none after. With the right 18 names, on the Nintendo Direct case, it had 14 of 26
+mentions right, and 10 without them. Names in its context can still be copied: once, a window cut
+mid-word had it go on with the rest of the list.
 
 A session takes the scene as it starts: switching to a scene of other names starts a new one for
 a recognizer that takes hints (`Spec.Hints`); a name learned meanwhile is heard from the next.
@@ -396,7 +409,7 @@ a recognizer that takes hints (`Spec.Hints`); a name learned meanwhile is heard 
 | `apple` | Stream | In the engine. `asr/apple`'s `Hint` tells the session when to have the engine `finalize`: once the hypothesis has stood 1.3 s, and in Chinese, whose clauses it ends late, at 0.2 s pauses too (what the segmenter's `VoiceCuts` did) |
 | `qwen-cloud` | Stream | `cloudasr` moved to `asr/qwencloud`; the hang-up on silence moves to `asr` for every billed adapter |
 | `sensevoice-small` | Batch | `tomoru-asr serve`; Timed; Volatile 0.4 s; Gap and Longest by measurement (now 0.5 s, 12 s; 0.25 s before the engine's detector, see local-asr.md) |
-| `qwen3-asr-0.6b`, `qwen3-asr-1.7b` | Batch | llama-server with the model's audio projector, chat API with the stretch as `input_audio` WAV; the reply is `language Japanese<asr_text>…`; the language is forced by an assistant prefill `language Japanese<asr_text>`; the scene's names as a system message; untimed. GPU only: on the CPU it falls behind |
+| `qwen3-asr-0.6b`, `qwen3-asr-1.7b` | Batch | llama-server with the model's audio projector, chat API with the stretch as `input_audio` WAV; the reply is `language Japanese<asr_text>…`; a grammar limits the language to the session's or `None`, no speech; a system message always, as the model was trained, with the scene's names or empty; `max_tokens` by the stretch's length (12 a second and 16), and an answer that uses them all is dropped; untimed. GPU only: on the CPU it falls behind |
 | `openai` | Stream | Realtime transcription by default: a WebSocket session, 24 kHz, turns by the engine's voice detection, each committed; `…transcription.delta` as volatile, `…completed` as final, in the commit order of items, as completions may come out of order; billed |
 | `openai` with another model | Batch | `POST {base}/v1/audio/transcriptions`, multipart WAV; `model`, `language`, `prompt` (the stretch before); Volatile 0 (each decode costs money and a round trip); Gap 0.5 s, Longest 5 s, for latency |
 
@@ -446,8 +459,8 @@ models together leave little of 8 GB of VRAM to a game; the page says so.
   says to choose a lighter model or check the network.
 - llama-server crashes or fails to start: the session stops with the error, like `tomoru-asr` now.
 - Music and sound effects recognized as words (the cloud's 「Do」, 「多河」 in the Sekiro case):
-  shown as subtitles; only Qwen3-ASR's `language None` and punctuation alone are dropped. The
-  benchmark's Noise chars/min shows how much comes through.
+  shown as subtitles; only Qwen3-ASR's `language None`, its answers longer than speech, and
+  punctuation alone are dropped. The benchmark's Noise chars/min shows how much comes through.
 - A stretch with nothing recognized: no result.
 - The cloud: no key or a refused key stops the session with an error the engines page explains;
   a slow network shows a notice (above). A lost connection ends Qwen's session with its error;
@@ -465,7 +478,7 @@ models together leave little of 8 GB of VRAM to a game; the page says so.
   the current tests that describe removed rules go with them.
 - Protocol: `decode`/`decoded` in `protocol/fixtures.json`, read by the Go and `engine/asr` sides.
 - Adapters: OpenAI transcriptions against an `httptest` server; Realtime against a fake WebSocket,
-  completions out of order; Qwen3-ASR's reply parsing and prefill; the hang-up on silence moved,
+  completions out of order; Qwen3-ASR's reply parsing, grammar and answer limit; the hang-up on silence moved,
   with its tests.
 - Benchmark, before and after each step: error rate, Shown and Final p50, Rewrite %, Long %,
   Fragment %, Noise, on the 29 cases plus dialogue cases. A local case kind for recordings that

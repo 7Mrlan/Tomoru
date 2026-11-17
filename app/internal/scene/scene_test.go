@@ -17,7 +17,7 @@ func TestApply(t *testing.T) {
 		{Src: "Eva", Tgt: "爱娃", Heard: []string{"Ava", "F", "A."}},
 		{Src: "纽北", Tgt: "Nürburgring", Heard: []string{"刘北", "刘备"}},
 		{Src: "", Tgt: "nothing"},
-	})
+	}, false)
 	for _, c := range []struct {
 		in, out string
 		terms   []translate.Term
@@ -52,7 +52,7 @@ func TestMaxTerms(t *testing.T) {
 		terms = append(terms, Term{Src: w, Tgt: w})
 		text += w + " "
 	}
-	if _, got := NewGlossary(terms).Apply(text); len(got) != MaxTerms {
+	if _, got := NewGlossary(terms, false).Apply(text); len(got) != MaxTerms {
 		t.Errorf("%d terms", len(got))
 	}
 }
@@ -78,11 +78,26 @@ func TestLoad(t *testing.T) {
 }
 
 func TestNames(t *testing.T) {
-	g := NewGlossary([]Term{{Src: "葦名", Tgt: "苇名", Auto: true}, {Src: "一心", Tgt: "一心"}, {Src: "一心", Tgt: "一心", Auto: true}, {Src: "九郎"}})
+	g := NewGlossary([]Term{{Src: "葦名", Tgt: "苇名", Auto: true}, {Src: "一心", Tgt: "一心"}, {Src: "一心", Tgt: "一心", Auto: true}, {Src: "九郎"}}, false)
 	if got := g.Names(); !slices.Equal(got, []string{"一心", "葦名"}) {
 		t.Errorf("%q", got) // the user's own first; none twice; none untranslated
 	}
 	if (*Glossary)(nil).Names() != nil {
 		t.Error("a nil glossary's names")
+	}
+}
+
+// The general scene's names go with whatever is watched: only as said, never told to recognition
+// or written over what was heard.
+func TestGeneral(t *testing.T) {
+	g := NewGlossary([]Term{{Src: "Claude", Tgt: "Claude", Heard: []string{"cloud"}}}, true)
+	if got := g.Names(); got != nil {
+		t.Errorf("names %q", got)
+	}
+	if text, terms := g.Apply("Private Cloud Compute"); text != "Private Cloud Compute" || terms != nil {
+		t.Errorf("%q %v", text, terms)
+	}
+	if _, terms := g.Apply("Claude Code"); len(terms) != 1 {
+		t.Errorf("%v", terms)
 	}
 }

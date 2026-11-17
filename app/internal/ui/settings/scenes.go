@@ -227,12 +227,22 @@ func (s *Settings) glossary(c *ui.Context, sc *scene.Scene) (then func()) {
 		}
 		return then
 	}
-	// The columns: as written, the translation, the ways misheard, and the row's button.
+	// The columns: as written, the translation, the ways misheard, and the row's button. The
+	// general scene's names are not written over what was heard (scene.NewGlossary): it has no
+	// ways misheard.
+	general := id == ""
 	cells := func(src, tgt, heard func(), action func()) {
-		ui.Box(c).Grid().ColumnTracks(ui.Fr(1), ui.Fr(1), ui.Fr(1.3), ui.Fixed(kit.Space(8))).Gap(kit.Space(2)).AlignItems(ui.Center).Children(func() {
+		tracks := []ui.Track{ui.Fr(1), ui.Fr(1)}
+		if !general {
+			tracks = append(tracks, ui.Fr(1.3))
+		}
+		tracks = append(tracks, ui.Fixed(kit.Space(8)))
+		ui.Box(c).Grid().ColumnTracks(tracks...).Gap(kit.Space(2)).AlignItems(ui.Center).Children(func() {
 			src()
 			tgt()
-			heard()
+			if !general {
+				heard()
+			}
 			action()
 		})
 	}

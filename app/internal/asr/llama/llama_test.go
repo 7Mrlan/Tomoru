@@ -14,7 +14,6 @@ import (
 func TestAnswer(t *testing.T) {
 	for in, want := range map[string]string{
 		"language Japanese<asr_text>その後、大事はないか。": "その後、大事はないか。",
-		"その後、大事はないか。":                            "その後、大事はないか。", // the prefill's continuation alone
 		"language None<asr_text>":                "",
 		"language None":                          "",
 		" language English<asr_text> Hello.":     "Hello.",
@@ -25,22 +24,25 @@ func TestAnswer(t *testing.T) {
 	}
 }
 
-func TestPrefill(t *testing.T) {
-	for lang, want := range map[string]string{"ja": "language Japanese<asr_text>", "yue": "language Cantonese<asr_text>",
-		"zh": "language Chinese<asr_text>", "zh-Hant": "", "xx": ""} {
-		if got := prefill(lang); got != want {
-			t.Errorf("prefill(%q) = %q, want %q", lang, got, want)
+// TestGrammar leaves the model its language or None, no speech, to start its answer with.
+func TestGrammar(t *testing.T) {
+	for lang, want := range map[string]string{"ja": `root ::= "language " ("Japanese" | "None") [^\x00]*`,
+		"yue": `root ::= "language " ("Cantonese" | "None") [^\x00]*`, "zh-Hant": "", "xx": ""} {
+		if got := grammar(lang); got != want {
+			t.Errorf("grammar(%q) = %q, want %q", lang, got, want)
 		}
 	}
 }
 
-// TestDecode sends the stretch as a WAV with the language prefilled, and reads the answer.
+// TestDecode sends the stretch as a WAV, the answer's language limited by a grammar and not
+// started for the model, and reads the answer.
 func TestDecode(t *testing.T) {
 	var got struct {
 		Messages []struct {
 			Role    string
 			Content json.RawMessage
 		}
+		Grammar string
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		json.NewDecoder(r.Body).Decode(&got)
@@ -53,14 +55,12 @@ func TestDecode(t *testing.T) {
 	if err != nil || len(ps) != 3 || ps[0].Text != "狼" || ps[2].Text != "。" {
 		t.Fatalf("%v %v", ps, err)
 	}
-	var prefilled string
 	var system string
-	if len(got.Messages) == 3 {
+	if len(got.Messages) == 2 {
 		json.Unmarshal(got.Messages[0].Content, &system)
-		json.Unmarshal(got.Messages[2].Content, &prefilled)
 	}
-	if len(got.Messages) != 3 || got.Messages[0].Role != "system" || system != "一心, 葦名" || got.Messages[2].Role != "assistant" || prefilled != "language Japanese<asr_text>" {
-		t.Fatalf("messages %d, system %q, prefilled %q", len(got.Messages), system, prefilled)
+	if len(got.Messages) != 2 || got.Messages[0].Role != "system" || system != "一心, 葦名" || got.Messages[1].Role != "user" || got.Grammar != grammar("ja") {
+		t.Fatalf("messages %d, system %q, grammar %q", len(got.Messages), system, got.Grammar)
 	}
 	got.Messages = got.Messages[1:] // the user's, with the audio, first
 	var parts []struct {
@@ -72,6 +72,35 @@ func TestDecode(t *testing.T) {
 	if len(parts) != 1 || parts[0].Type != "input_audio" || parts[0].InputAudio.Format != "wav" ||
 		string(audio[:4]) != "RIFF" || string(audio[8:12]) != "WAVE" || len(audio) != 44+3200 {
 		t.Fatalf("audio %+v, %d bytes", parts, len(audio))
+	}
+}
+
+// TestBound gives an answer as many tokens as the stretch's speech may take, and takes one that
+// used them all as no speech: the model going on by itself. An empty context is still sent, as the
+// model was trained.
+func TestBound(t *testing.T) {
+	var got struct {
+		Messages  []struct{ Role string }
+		MaxTokens int `json:"max_tokens"`
+	}
+	reason := "length"
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewDecoder(r.Body).Decode(&got)
+		w.Write([]byte(`{"choices":[{"finish_reason":"` + reason + `","message":{"content":"language English<asr_text>Congratulations! Congratulations!"}}]}`))
+	}))
+	defer srv.Close()
+	d := New(srv.URL, "en", "")
+	defer d.Stop()
+	ps, err := d.Decode(context.Background(), make([]byte, 3*2*rate))
+	if err != nil || len(ps) != 0 {
+		t.Fatalf("an answer cut at its limit: %v %v", ps, err)
+	}
+	if got.MaxTokens != tokensMore+3*tokensPerSecond || len(got.Messages) != 2 || got.Messages[0].Role != "system" {
+		t.Fatalf("max_tokens %d for 3 s, messages %+v", got.MaxTokens, got.Messages)
+	}
+	reason = "stop"
+	if ps, err := d.Decode(context.Background(), make([]byte, 3*2*rate)); err != nil || len(ps) == 0 {
+		t.Fatalf("an answer that ended: %v %v", ps, err)
 	}
 }
 

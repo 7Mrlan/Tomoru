@@ -245,7 +245,7 @@ func (s *SceneService) activate(id string) { s.activeID = id; s.refresh() }
 func (s *SceneService) refresh() {
 	sc := s.current(s.activeID)
 	about := strings.TrimSpace(sc.About)
-	s.glossary.Store(scene.NewGlossary(sc.Terms))
+	s.glossary.Store(scene.NewGlossary(sc.Terms, sc.ID == ""))
 	s.about.Store(&about)
 }
 

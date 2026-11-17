@@ -999,6 +999,51 @@ func TestLearn(t *testing.T) {
 	}
 }
 
+// TestLearnGeneral adds names learned from the general scene's records to a new scene, as they
+// would otherwise go with whatever is watched.
+func TestLearnGeneral(t *testing.T) {
+	k := coretest.New()
+	s := New(k, &coretest.Nav{})
+	s.Tab = "scenes"
+	tt := ui.NewTester(s.View, Width, 1000)
+	s.learnFrom([]string{"/h/a.jsonl"}, "")
+	k.Learning = core.Learning{Finished: true, Paths: []string{"/h/a.jsonl"}, Suggestions: []learn.Suggestion{
+		{Src: "Faker", Tgt: "Faker", Heard: []string{"Baker"}, Count: 3, Example: "Baker is back"},
+	}}
+	tt.Frame()
+	if !tt.HasText(locales.NewScene()) {
+		t.Fatalf("texts %q", tt.Texts())
+	}
+	if err := tt.Click(locales.AddTerm()); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	scenes := k.SceneList()
+	if len(scenes) != 2 || len(scenes[0].Terms) != 0 || len(scenes[1].Terms) != 1 {
+		t.Fatalf("scenes %+v", scenes)
+	}
+}
+
+// TestGeneralGlossary has no ways misheard for the general scene's names: they are not used.
+func TestGeneralGlossary(t *testing.T) {
+	k := coretest.New()
+	k.AddTerm("", scene.Term{Src: "Faker", Tgt: "Faker"})
+	s := New(k, &coretest.Nav{})
+	s.Tab = "scenes"
+	s.sceneEdit = sceneEdit{id: true, scene: ""}
+	tt := ui.NewTester(s.View, Width, 1000)
+	if !tt.HasText(locales.TermSrc()) || tt.HasText(locales.TermHeard()) {
+		t.Errorf("texts %q", tt.Texts())
+	}
+	id := k.AddScene("LoL")
+	k.AddTerm(id, scene.Term{Src: "Faker", Tgt: "Faker"})
+	s.sceneEdit = sceneEdit{id: true, scene: id}
+	tt.Frame()
+	if !tt.HasText(locales.TermHeard()) {
+		t.Errorf("texts %q", tt.Texts())
+	}
+}
+
 // TestOrder puts the translation on top, and has no order with the translation only.
 func TestOrder(t *testing.T) {
 	k := coretest.New()

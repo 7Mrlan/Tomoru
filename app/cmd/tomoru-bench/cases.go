@@ -67,7 +67,7 @@ func readGlossary(path string) (*scene.Glossary, error) {
 	if err != nil {
 		return nil, fmt.Errorf("glossary: %w", err)
 	}
-	return scene.NewGlossary(terms), nil
+	return scene.NewGlossary(terms, false), nil
 }
 
 // readAbout reads the description of case id's scene, <id>.txt in dir: "" when there is none.
