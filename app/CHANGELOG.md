@@ -1,5 +1,45 @@
 # Changelog
 
+## 0.2.0-beta.1
+
+Tomoru runs on Linux: subtitles for what the computer plays, and selecting part of the screen to
+translate. This beta is for trying it on Linux x64 with GNOME or KDE, Ubuntu 22.04 or a
+distribution as new. Subtitles can also take any font installed, and how faint their text, box and
+earlier lines are is up to you.
+
+On Linux, the tray icon needs `libayatana-appindicator3`, and on GNOME the AppIndicator extension
+(Ubuntu ships it). Outside GNOME, the subtitles stay over other windows with `libgtk-layer-shell0`,
+which the Debian package installs. Linux hears all system sound, not one app alone yet; on Wayland,
+selecting part of the screen asks once for permission to take screenshots.
+
+### New
+
+- Linux x64: hearing the default output, subtitles over other windows and fullscreen video, the
+  tray's menu and panel, the shortcuts, and selecting part of the screen to translate.
+  ([#50](https://github.com/ACAne0320/Tomoru/pull/50), [#52](https://github.com/ACAne0320/Tomoru/pull/52), [#58](https://github.com/ACAne0320/Tomoru/pull/58), [#59](https://github.com/ACAne0320/Tomoru/pull/59))
+- Subtitle style › Font › More fonts…: any font installed, found by name, each previewed in the
+  subtitles' language. ([#47](https://github.com/ACAne0320/Tomoru/pull/47))
+- Subtitle style has sliders for the opacity of the text, of the box, and of earlier lines.
+  ([#51](https://github.com/ACAne0320/Tomoru/pull/51))
+- About lists the works Tomoru is built on, with links, and opens the third-party licenses.
+  ([#49](https://github.com/ACAne0320/Tomoru/pull/49))
+
+### Improved
+
+- With Qwen3-ASR, a line said in another language than the one chosen, as an interpreter's or a
+  player's in an interview, is written as said, not translated into the chosen language or dropped.
+  ([#57](https://github.com/ACAne0320/Tomoru/pull/57))
+- Names in the General scene's glossary are kept for translation, and no longer told to
+  recognition, where they turned heard words of every video into those names.
+  ([#54](https://github.com/ACAne0320/Tomoru/pull/54))
+
+### Fixed
+
+- With Qwen3-ASR, a crowd or music no longer turns into subtitles of its own, such as one word
+  repeated hundreds of times. ([#54](https://github.com/ACAne0320/Tomoru/pull/54))
+- On macOS, opening Tomoru again while it runs opens Settings, the way in when the menu bar icon
+  is hidden behind the notch. ([#46](https://github.com/ACAne0320/Tomoru/pull/46))
+
 ## 0.1.10
 
 Japanese in the subtitles reads as Japanese: its kanji take their Japanese forms, also on a
