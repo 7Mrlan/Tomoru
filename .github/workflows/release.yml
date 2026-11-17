@@ -41,8 +41,9 @@ jobs:
           # install.sh downloads the latest release, which a prerelease is not: a prerelease's
           # script is given its archive.
           tarball="tomoru-$version-linux-amd64.tar.gz"
-          # A Debian version sorts a prerelease before its release with "~" (MyGo's debVersion).
-          deb="tomoru_$(printf %s "$version" | sed 's/-/~/; s/-/./g; s/+/~/g')_amd64.deb"
+          # A Debian version sorts a prerelease before its release with "~" (MyGo's debVersion), which
+          # GitHub turns into "." in the asset's name: 0.2.0-beta.1's is tomoru_0.2.0.beta.1_amd64.deb.
+          deb="tomoru_$(printf %s "$version" | tr -- '-+' '..')_amd64.deb"
           case "$GITHUB_REF_NAME" in
           *-*) linux="On any Linux distribution, download [$tarball]($releases/$tarball) and [install.sh]($releases/install.sh), and run \`sh install.sh $tarball\` where they are: it installs this prerelease without root, and that install updates itself to the next release; the Debian package does not." ;;
           *) linux="On any Linux distribution, \`curl -fsSL https://github.com/$GITHUB_REPOSITORY/releases/latest/download/install.sh | sh\` installs the latest release without root, and that install updates itself; the Debian package does not." ;;
