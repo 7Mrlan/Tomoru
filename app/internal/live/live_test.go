@@ -495,3 +495,46 @@ func TestHint(t *testing.T) {
 		t.Errorf("finalized %v", f.ts)
 	}
 }
+
+// TestLanguages has each line take the language its recognizer told, translated from it, and a
+// line heard in the language translated into done as said, untranslated; pending text in it is
+// not drafted. With lang.Auto and no language told, the translator is told none.
+func TestLanguages(t *testing.T) {
+	var mu sync.Mutex
+	var last State
+	drafted := false
+	s := newSession(Config{FinalsEnd: true, Src: "auto", Tgt: "zh", Translator: upper{}, Draft: true}, func(st State) {
+		mu.Lock()
+		defer mu.Unlock()
+		last, drafted = st, drafted || st.Draft != ""
+	})
+	defer s.Stop()
+	final := func(text, heard string, at float64) {
+		start, end := at, at+1
+		s.handle(engine.Event{Type: "result", Final: true, Start: start, End: end, Lang: heard,
+			Tokens: []engine.Token{{Text: text, Start: &start, End: &end}}})
+	}
+	final("Hello.", "", 0)
+	final("오늘 방송 시작합니다.", "ko", 1)
+	s.handle(engine.Event{Type: "result", Start: 2, End: 3, Lang: "zh", Tokens: []engine.Token{{Text: "我们BLG就是最强的我们"}}})
+	waitFor(t, &mu, func() bool { return last.PendingLang == "zh" })
+	final("我们BLG就是最强的。", "zh", 2)
+	final("金になる。", "", 3) // told no language: not the one before
+	waitFor(t, &mu, func() bool {
+		return len(last.Lines) == 4 && last.Lines[0].Done && last.Lines[1].Done && last.Lines[2].Done && last.Lines[3].Done
+	})
+	want := []Line{
+		{Src: "Hello.", Tgt: "[→zh] Hello."},
+		{Src: "오늘 방송 시작합니다.", Lang: "ko", Tgt: "[ko→zh] 오늘 방송 시작합니다."},
+		{Src: "我们BLG就是最强的。", Lang: "zh", AsSaid: true},
+		{Src: "金になる。", Tgt: "[→zh] 金になる。"},
+	}
+	for i, l := range last.Lines {
+		if l.Src != want[i].Src || l.Lang != want[i].Lang || l.Tgt != want[i].Tgt || l.AsSaid != want[i].AsSaid || l.Err != nil {
+			t.Errorf("line %d: %+v", i, l)
+		}
+	}
+	if drafted {
+		t.Error("drafted pending text in the language translated into")
+	}
+}

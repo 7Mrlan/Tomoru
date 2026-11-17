@@ -4,6 +4,7 @@ package lang
 
 import (
 	"slices"
+	"unicode"
 
 	"golang.org/x/text/language"
 	"golang.org/x/text/language/display"
@@ -16,6 +17,26 @@ var All = []string{
 	"zh", "en", "ja", "ko", "zh-Hant", "yue",
 	"ar", "cs", "da", "de", "el", "es", "fa", "fi", "fil", "fr", "hi", "hu", "id", "it",
 	"mk", "ms", "nl", "pl", "pt", "ro", "ru", "sv", "th", "tr", "vi",
+}
+
+// Auto is the language to speak that is no one language: the recognizer tells which it hears,
+// sentence by sentence, among those it recognizes, for speakers who change language.
+const Auto = "auto"
+
+// Choose makes l the language of side, of a pair to speak and translate into; choosing other's
+// swaps them, but for Auto, which nothing is translated into: then other is English, or Chinese
+// for English.
+func Choose(side, other *string, l string) {
+	if l == *other {
+		*other = *side
+		if *other == Auto {
+			*other = "en"
+			if l == "en" {
+				*other = "zh"
+			}
+		}
+	}
+	*side = l
 }
 
 // Featured are the languages most watched, which pickers show first.
@@ -104,6 +125,36 @@ func Chinese(code string) bool {
 	}
 	base, _ := t.Base()
 	return base.String() == "zh" || base.String() == "yue"
+}
+
+// Fits tells whether text may be in code, by the scripts it has: hangul only in Korean, kana only
+// in Japanese, Chinese characters only in Chinese and Japanese, and other letters in none of these.
+// A recognizer's label it does not fit is wrong.
+func Fits(text, code string) bool {
+	var hangul, kana, han, other bool
+	for _, r := range text {
+		switch {
+		case unicode.Is(unicode.Hangul, r):
+			hangul = true
+		case unicode.In(r, unicode.Hiragana, unicode.Katakana):
+			kana = true
+		case unicode.Is(unicode.Han, r):
+			han = true
+		case unicode.IsLetter(r):
+			other = true
+		}
+	}
+	switch {
+	case hangul:
+		return code == "ko"
+	case kana:
+		return code == "ja"
+	case han:
+		return Chinese(code) || code == "ja"
+	case other:
+		return !CJK(code)
+	}
+	return true
 }
 
 func script(code string) string {

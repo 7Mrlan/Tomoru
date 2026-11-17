@@ -29,6 +29,7 @@ type fakeDec struct {
 	fail  error
 	stop  float64
 	delay time.Duration // each decode takes
+	lang  string        // heard, in every piece
 	done  chan struct{}
 }
 
@@ -47,12 +48,12 @@ func (d *fakeDec) Decode(_ context.Context, pcm []byte) ([]Piece, error) {
 	var out []Piece
 	for i := 0; float64(i)*.1 < s; i++ {
 		at := float64(i) * .1
-		out = append(out, Piece{Text: "あ", At: at})
+		out = append(out, Piece{Text: "あ", At: at, Lang: d.lang})
 		if d.stop > 0 && math.Abs(at-d.stop) < .01 {
-			out = append(out, Piece{Text: "。", At: at + .05})
+			out = append(out, Piece{Text: "。", At: at + .05, Lang: d.lang})
 		}
 	}
-	return append(out, Piece{Text: "。", At: s}), nil
+	return append(out, Piece{Text: "。", At: s, Lang: d.lang}), nil
 }
 
 func (d *fakeDec) Stop() {
@@ -200,6 +201,26 @@ func TestStops(t *testing.T) {
 	res := of(evs, "result")
 	if f := res[len(res)-1]; !f.Final || strings.HasSuffix(f.Text(), "。") || !strings.HasSuffix(f.Text(), "あ") {
 		t.Errorf("final %q", f.Text())
+	}
+}
+
+// TestLang has each result say the language its pieces were heard in.
+func TestLang(t *testing.T) {
+	var evs []engine.Event
+	dec := newFake()
+	dec.lang = "ja"
+	r := &Runner{dec: dec, caps: Caps{Volatile: .4, Gap: .25, Longest: 12}, on: func(e engine.Event) { evs = append(evs, e) }}
+	if err := feed(r, [][2]float64{{1, 3}}, 5); err != nil {
+		t.Fatal(err)
+	}
+	res := of(evs, "result")
+	for _, e := range res {
+		if e.Lang != "ja" {
+			t.Fatalf("result %+v", e)
+		}
+	}
+	if len(res) < 2 || !res[len(res)-1].Final {
+		t.Fatalf("results %d", len(res))
 	}
 }
 
@@ -577,5 +598,23 @@ func TestRemote(t *testing.T) {
 	}
 	if lag := of(evs, "lag"); len(lag) != 2 || lag[0].T < .02 {
 		t.Errorf("lag events %+v", lag)
+	}
+}
+
+// TestSettleLang takes a decode in another language than what shows for another reading: what
+// shows goes, and two decodes of it agree anew.
+func TestSettleLang(t *testing.T) {
+	r := &Runner{}
+	en := []Piece{{Text: "Congratulations", Lang: "en"}}
+	zh := []Piece{{Text: "恭喜", Lang: "zh"}}
+	r.settle(en)
+	if got := r.settle(en); len(got) != 1 || got[0].Lang != "en" {
+		t.Fatalf("agreed %+v", got)
+	}
+	if got := r.settle(zh); len(got) != 0 {
+		t.Fatalf("another language kept %+v", got)
+	}
+	if got := r.settle(zh); len(got) != 1 || got[0].Text != "恭喜" {
+		t.Fatalf("agreed anew %+v", got)
 	}
 }

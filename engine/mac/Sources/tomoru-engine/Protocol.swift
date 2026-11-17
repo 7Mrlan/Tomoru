@@ -36,6 +36,7 @@ struct WireEvent: Codable {
     var y: Int? = nil
     var width: Int? = nil
     var height: Int? = nil
+    var lang: String? = nil
 
     static func hello() -> Self { Self(type: "hello", protocol: protocolVersion, engine: "mac", version: engineVersion) }
     static func state(_ state: String) -> Self { Self(type: "state", state: state) }

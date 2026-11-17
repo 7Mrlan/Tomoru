@@ -43,6 +43,15 @@ func TestLoad(t *testing.T) {
 	if got.Src != "en" || got.Tgt != "zh" || got.Shown != MaxShown || got.Font != "system" || got.MT != "custom:gone" {
 		t.Errorf("%+v", got)
 	}
+	// A language detected stays; it is no language to translate into.
+	os.WriteFile(path, []byte(`{"Src": "auto", "Tgt": "zh"}`), 0o644)
+	if got, _ = Load(path, "en"); got.Src != "auto" || got.Tgt != "zh" {
+		t.Errorf("auto → %s became %s → %s", "zh", got.Src, got.Tgt)
+	}
+	os.WriteFile(path, []byte(`{"Src": "ja", "Tgt": "auto"}`), 0o644)
+	if got, _ = Load(path, "zh-Hans"); got.Src != "en" || got.Tgt != "zh" {
+		t.Errorf("ja → auto became %s → %s", got.Src, got.Tgt)
+	}
 	// Opacity past its range is set right; settings from before it take the defaults.
 	os.WriteFile(path, []byte(`{"TextOpacity": 5, "BoxOpacity": 120}`), 0o644)
 	if got, _ = Load(path, "en"); got.TextOpacity != MinTextOpacity || got.BoxOpacity != 100 || got.OlderOpacity != 54 {

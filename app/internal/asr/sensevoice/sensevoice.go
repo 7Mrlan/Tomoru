@@ -30,12 +30,13 @@ type Decoder struct {
 
 	mu      sync.Mutex
 	n       int
-	waiting map[string]chan []engine.Token
+	waiting map[string]chan engine.Event
 }
 
-// Start starts tomoru-asr at bin decoding lang with the model in dir.
+// Start starts tomoru-asr at bin decoding lang with the model in dir: lang.Auto has it tell the
+// language of each stretch.
 func Start(bin, dir, lang string) (*Decoder, error) {
-	d := &Decoder{waiting: map[string]chan []engine.Token{}}
+	d := &Decoder{waiting: map[string]chan engine.Event{}}
 	p, err := engine.Serve(bin, dir, lang, d.event)
 	if err != nil {
 		return nil, err
@@ -53,13 +54,14 @@ func (d *Decoder) event(ev engine.Event) {
 	delete(d.waiting, ev.ID)
 	d.mu.Unlock()
 	if ch != nil {
-		ch <- ev.Tokens
+		ch <- ev
 	}
 }
 
-// Decode decodes a stretch: its tokens, each at its time from the stretch's start.
+// Decode decodes a stretch: its tokens, each at its time from the stretch's start, in the language
+// heard.
 func (d *Decoder) Decode(ctx context.Context, pcm []byte) ([]batch.Piece, error) {
-	ch := make(chan []engine.Token, 1)
+	ch := make(chan engine.Event, 1)
 	d.mu.Lock()
 	d.n++
 	id := strconv.Itoa(d.n)
@@ -75,10 +77,10 @@ func (d *Decoder) Decode(ctx context.Context, pcm []byte) ([]batch.Piece, error)
 		return nil, err
 	}
 	select {
-	case tokens := <-ch:
-		pieces := make([]batch.Piece, 0, len(tokens))
-		for _, t := range tokens {
-			p := batch.Piece{Text: t.Text}
+	case ev := <-ch:
+		pieces := make([]batch.Piece, 0, len(ev.Tokens))
+		for _, t := range ev.Tokens {
+			p := batch.Piece{Text: t.Text, Lang: ev.Lang}
 			if t.Start != nil {
 				p.At = *t.Start
 			}

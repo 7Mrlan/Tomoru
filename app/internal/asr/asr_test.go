@@ -67,6 +67,9 @@ func TestSpecsMake(t *testing.T) {
 	if !apple.FinalsEnd || !apple.VolatileSentences || apple.Hint == nil || model.FinalsEnd || model.VolatileSentences {
 		t.Error("only services end utterances with final results, and only theirs hold volatile sentence ends")
 	}
+	if apple.Auto || !model.Auto || !served.Auto {
+		t.Error("the models tell the language they hear; Apple's recognition is told it")
+	}
 	cloud, ok := ByID(QwenCloud)
 	if !ok || !cloud.Cloud || !cloud.Billed || !cloud.Key || cloud.Langs == nil || !cloud.FinalsEnd || !cloud.VolatileSentences {
 		t.Fatalf("the cloud's entry: %+v", cloud)

@@ -2,7 +2,7 @@
 // app cuts what a platform engine hears with `listen --asr none` into stretches of speech, and
 // asks tomoru-asr to decode each (docs/engine-protocol.md, docs/recognition.md).
 //
-//	tomoru-asr serve --model <dir> --lang <zh|en|ja|ko|yue> [--threads <n>]
+//	tomoru-asr serve --model <dir> --lang <auto|zh|en|ja|ko|yue> [--threads <n>]
 package main
 
 import (
@@ -52,12 +52,12 @@ func main() {
 	log.SetPrefix("[asr] ")
 	send(Event{Type: "hello", Protocol: 1, Engine: "asr", Version: version})
 	if len(os.Args) < 2 || os.Args[1] != "serve" {
-		fmt.Fprintln(os.Stderr, "usage: tomoru-asr serve --model <dir> --lang <zh|en|ja|ko|yue> [--threads <n>]")
+		fmt.Fprintln(os.Stderr, "usage: tomoru-asr serve --model <dir> --lang <auto|zh|en|ja|ko|yue> [--threads <n>]")
 		os.Exit(2)
 	}
 	fs := flag.NewFlagSet("serve", flag.ExitOnError)
 	model := fs.String("model", "", "the model's directory")
-	lang := fs.String("lang", "auto", "the language spoken")
+	lang := fs.String("lang", "auto", `the language spoken, or "auto" to tell it stretch by stretch`)
 	threads := fs.Int("threads", 2, "threads to decode with")
 	fs.Parse(os.Args[2:])
 	rec, err := newSenseVoice(*model, *lang, *threads)

@@ -24,7 +24,8 @@ import (
 
 // Request is a line to translate.
 type Request struct {
-	Src, Tgt string // languages, of lang.All
+	// Src and Tgt are languages, of lang.All; Src "" where the language heard is not known.
+	Src, Tgt string
 	Text     string
 	// Draft tells that Text is the start of a sentence still being spoken: the model translates
 	// what is there, without completing it.
@@ -231,8 +232,12 @@ func hymtPrompt(r Request) string {
 }
 
 func chatSystem(r Request) string {
-	s := fmt.Sprintf("You are a live subtitle translator. Translate the user's %s line into natural, colloquial %s suitable for on-screen subtitles. Output only the translation.",
-		enName(r.Src), enName(r.Tgt))
+	src := "line"
+	if r.Src != "" {
+		src = enName(r.Src) + " line"
+	}
+	s := fmt.Sprintf("You are a live subtitle translator. Translate the user's %s into natural, colloquial %s suitable for on-screen subtitles. Output only the translation.",
+		src, enName(r.Tgt))
 	if r.About != "" {
 		s += " What is being watched: " + r.About + "."
 	}

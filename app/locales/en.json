@@ -1123,6 +1123,10 @@
       }
     }
   },
+  "anyLanguage": "any language",
+  "@anyLanguage": {
+    "description": "Guide, try step: what fills {language} in its sentences (Play a video in {language}; Recognizing {language}) when the spoken language is Auto-detect."
+  },
   "tryTranslating": "Translating into {language}",
   "@tryTranslating": {
     "description": "Guide, try step: the third check, that the text is translated.",
@@ -1633,6 +1637,10 @@
       }
     }
   },
+  "autoDetect": "Auto-detect",
+  "@autoDetect": {
+    "description": "A choice of the spoken language, first in its menus: the recognition tells which language it hears, sentence by sentence, for videos and streams that change language."
+  },
   "doesntHearSwitch": "Doesn't hear {lang}. Using it changes the spoken language to {then}.",
   "@doesntHearSwitch": {
     "description": "In a recognition engine's detail, when it does not recognize the spoken language: what using it changes.",
@@ -1641,6 +1649,20 @@
         "type": "String",
         "example": "French"
       },
+      "then": {
+        "type": "String",
+        "example": "English"
+      }
+    }
+  },
+  "cantDetect": "Can't detect the language",
+  "@cantDetect": {
+    "description": "Under a recognition engine in the list, in red, when the spoken language is Auto-detect: it must be told the language."
+  },
+  "cantDetectSwitch": "Can't detect the language. Using it changes the spoken language to {then}.",
+  "@cantDetectSwitch": {
+    "description": "In a recognition engine's detail, when the spoken language is Auto-detect and it cannot detect it: what using it changes.",
+    "placeholders": {
       "then": {
         "type": "String",
         "example": "English"

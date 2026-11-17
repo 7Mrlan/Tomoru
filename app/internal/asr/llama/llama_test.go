@@ -8,8 +8,12 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"slices"
+	"strings"
 	"testing"
 	"time"
+
+	"tomoru/internal/models"
 )
 
 func TestAnswer(t *testing.T) {
@@ -25,13 +29,61 @@ func TestAnswer(t *testing.T) {
 	}
 }
 
-// TestGrammar leaves the model its language or None, no speech, to start its answer with.
+// TestGrammar leaves the model its language or None, no speech, to start its answer with; for
+// lang.Auto, any it recognizes.
 func TestGrammar(t *testing.T) {
 	for lang, want := range map[string]string{"ja": `root ::= "language " ("Japanese" | "None") [^\x00]*`,
 		"yue": `root ::= "language " ("Cantonese" | "None") [^\x00]*`, "zh-Hant": "", "xx": ""} {
 		if got := grammar(lang); got != want {
 			t.Errorf("grammar(%q) = %q, want %q", lang, got, want)
 		}
+	}
+	auto := grammar("auto")
+	if !strings.HasPrefix(auto, `root ::= "language " ("Chinese" | "English" | "Japanese" | "Korean" | "Cantonese" | `) ||
+		!strings.HasSuffix(auto, ` | "None") [^\x00]*`) || strings.Count(auto, " | ") != len(models.Qwen3ASRLangs) {
+		t.Errorf("grammar(auto) = %q", auto)
+	}
+}
+
+// TestAuto has the model tell the language first heard among those it recognizes, in one ask;
+// then, of a short stretch, another takes over where the model is sure of it, and else the stretch
+// is decoded again in the one heard last; of a long one, the model's is taken as told.
+func TestAuto(t *testing.T) {
+	const told = `{"choices":[{"message":{"content":"language %s<asr_text>%s"},"logprobs":{"content":[` +
+		`{"token":"language","top_logprobs":[{"token":"language","logprob":0}]},` +
+		`{"token":" %s","top_logprobs":[{"token":" %s","logprob":0},{"token":" Korean","logprob":%d}]}]}}]}`
+	var grammars []string
+	answer := func(w http.ResponseWriter) {
+		switch n := len(grammars); {
+		case n == 1:
+			w.Write([]byte(`{"choices":[{"message":{"content":"language Korean<asr_text>안녕하세요."}}]}`))
+		case n == 2: // Chinese, and sure it is not Korean
+			fmt.Fprintf(w, told, "Chinese", "我们BLG就是最强的。", "Chinese", "Chinese", -20)
+		case n == 3, n == 5: // Japanese, not sure it is not Chinese
+			fmt.Fprintf(w, told, "Japanese", "食べい。", "Japanese", "Japanese", -2)
+		default: // decoded again in Chinese
+			w.Write([]byte(`{"choices":[{"message":{"content":"language Chinese<asr_text>吃吧。"}}]}`))
+		}
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var got struct{ Grammar string }
+		json.NewDecoder(r.Body).Decode(&got)
+		grammars = append(grammars, got.Grammar)
+		answer(w)
+	}))
+	defer srv.Close()
+	d := New(srv.URL, "auto", "")
+	defer d.Stop()
+	var heard []string
+	for _, n := range []int{3200, 3200, 3200, 2 * rate * brief} {
+		ps, err := d.Decode(context.Background(), make([]byte, n))
+		if err != nil || len(ps) == 0 {
+			t.Fatalf("decoded %v: %v", ps, err)
+		}
+		heard = append(heard, ps[0].Lang)
+	}
+	if !slices.Equal(heard, []string{"ko", "zh", "zh", "ja"}) || !slices.Equal(grammars, []string{grammar("auto"), "", "", grammar("zh"), ""}) {
+		t.Fatalf("heard %v, grammars %q", heard, grammars)
 	}
 }
 
@@ -87,12 +139,12 @@ func TestLanguage(t *testing.T) {
 	for _, c := range []struct {
 		name, alternatives string
 		asks               int
-		want               string
+		want, heard        string
 	}{
-		{"sure", `,{"token":" Eng","logprob":-20}`, 1, "我们BLG就是最强的。"},
-		{"not sure", `,{"token":" English","logprob":-4}`, 2, "We BLG are the strongest."},
-		{"not listed, below the least listed", "", 2, "We BLG are the strongest."},
-		{"not listed, the least listed unlikely", `,{"token":" Japanese","logprob":-20}`, 1, "我们BLG就是最强的。"},
+		{"sure", `,{"token":" Eng","logprob":-20}`, 1, "我们BLG就是最强的。", "zh"},
+		{"not sure", `,{"token":" English","logprob":-4}`, 2, "We BLG are the strongest.", "en"},
+		{"not listed, below the least listed", "", 2, "We BLG are the strongest.", "en"},
+		{"not listed, the least listed unlikely", `,{"token":" Japanese","logprob":-20}`, 1, "我们BLG就是最强的。", "zh"},
 	} {
 		asks := 0
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -106,11 +158,11 @@ func TestLanguage(t *testing.T) {
 			fmt.Fprintf(w, other, c.alternatives)
 		}))
 		d := New(srv.URL, "en", "")
-		text, err := d.transcribe(context.Background(), make([]byte, 3200))
+		text, heard, err := d.transcribe(context.Background(), make([]byte, 3200))
 		d.Stop()
 		srv.Close()
-		if err != nil || text != c.want || asks != c.asks {
-			t.Errorf("%s: %q after %d asks, %v", c.name, text, asks, err)
+		if err != nil || text != c.want || heard != c.heard || asks != c.asks {
+			t.Errorf("%s: %q in %q after %d asks, %v", c.name, text, heard, asks, err)
 		}
 	}
 }
@@ -176,5 +228,32 @@ func TestStop(t *testing.T) {
 	defer failing.Close()
 	if _, err := New(failing.URL, "en", "").Decode(context.Background(), nil); err == nil || errors.Is(err, context.Canceled) {
 		t.Fatalf("a server error: %v", err)
+	}
+}
+
+// TestUnfit takes a stretch decoded again in the language heard last, which the model wrote in
+// another all the same, as of none known.
+func TestUnfit(t *testing.T) {
+	n := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		n++
+		switch n {
+		case 1:
+			w.Write([]byte(`{"choices":[{"message":{"content":"language Chinese<asr_text>我不要。"}}]}`))
+		case 2: // Japanese, not sure it is not Chinese
+			w.Write([]byte(`{"choices":[{"message":{"content":"language Japanese<asr_text>金になる。"},"logprobs":{"content":[` +
+				`{"token":"language","top_logprobs":[{"token":"language","logprob":0}]},` +
+				`{"token":" Japanese","top_logprobs":[{"token":" Japanese","logprob":0},{"token":" Chinese","logprob":-2}]}]}}]}`))
+		default: // in Chinese, as asked, written in Japanese
+			w.Write([]byte(`{"choices":[{"message":{"content":"language Chinese<asr_text>金になるかもしれない。"}}]}`))
+		}
+	}))
+	defer srv.Close()
+	d := New(srv.URL, "auto", "")
+	defer d.Stop()
+	d.Decode(context.Background(), make([]byte, 3200))
+	ps, err := d.Decode(context.Background(), make([]byte, 3200))
+	if err != nil || len(ps) == 0 || ps[0].Lang != "" || n != 3 {
+		t.Fatalf("pieces %+v after %d asks: %v", ps, n, err)
 	}
 }

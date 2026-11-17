@@ -8,6 +8,7 @@ import (
 
 	"tomoru/internal/core"
 	"tomoru/internal/engine"
+	"tomoru/internal/lang"
 	"tomoru/internal/live"
 	"tomoru/internal/models"
 	"tomoru/internal/ui/assets"
@@ -171,10 +172,19 @@ func lastID(lines []live.Line) int {
 // three checks.
 func (g *Guide) trying(c *ui.Context) {
 	k := g.core
-	src := shared.LangName(k.Preferences().Src)
+	src := spokenName(k.Preferences().Src)
 	saying := k.Speaking || g.try.sample
 	g.part(c, 0, func() { g.tryIntro(c, src, saying) })
 	g.part(c, 1, func() { g.tryChecks(c, saying) })
+}
+
+// spokenName is the spoken language's name as the try step's sentences take it: any, for
+// lang.Auto.
+func spokenName(code string) string {
+	if code == lang.Auto {
+		return locales.AnyLanguage()
+	}
+	return shared.LangName(code)
 }
 
 // tryIntro is the try step's heading, what to play, and the sample's button where there is one.
@@ -246,7 +256,7 @@ func (g *Guide) tryChecks(c *ui.Context, saying bool) {
 // soon as it passes; saying is whether the sample is being said.
 func (g *Guide) checks(c *ui.Context, saying bool) {
 	k := g.core
-	src, tgt := shared.LangName(k.Preferences().Src), shared.LangName(k.Preferences().Tgt)
+	src, tgt := spokenName(k.Preferences().Src), shared.LangName(k.Preferences().Tgt)
 	// Ticked as the stage's light gets to the pane of each.
 	recognized, translated := g.try.shown(c.Now())
 	ui.Column(c).Gap(kit.Space(3)).Margin(6, 0, 0, 0).Children(func() {

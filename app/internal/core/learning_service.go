@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"tomoru/internal/history"
+	"tomoru/internal/lang"
 	"tomoru/internal/learn"
 	"tomoru/internal/scene"
 	"tomoru/internal/translate"
@@ -288,13 +289,14 @@ func (s *LearningService) startRetranslating(r retranslationRequest) {
 				src, terms := glossary.Apply(raw)
 				var out string
 				var err error
-				if !session.head.Untranslated {
-					out, err = tr.Translate(op.ctx, translate.Request{Src: session.head.Src, Tgt: session.head.Tgt, Text: src, Terms: terms}, nil)
+				untranslated := session.head.Untranslated || entry.Said
+				if !untranslated {
+					out, err = tr.Translate(op.ctx, translate.Request{Src: spokenIn(entry, session.head), Tgt: session.head.Tgt, Text: src, Terms: terms}, nil)
 				}
 				if op.ctx.Err() != nil {
 					return
 				}
-				if err == nil && (out != "" || session.head.Untranslated) {
+				if err == nil && (out != "" || untranslated) {
 					x := &session.entries[i]
 					x.Src, x.Tgt, x.Err, x.Heard = src, out, "", ""
 					if src != raw {
@@ -385,4 +387,12 @@ func heard(entry history.Entry) string {
 		return entry.Heard
 	}
 	return entry.Src
+}
+
+// spokenIn is the language e was heard in, of lang.All, in a session of h; "" where not known.
+func spokenIn(e history.Entry, h history.Head) string {
+	if e.Lang != "" || h.Src == lang.Auto {
+		return e.Lang
+	}
+	return h.Src
 }

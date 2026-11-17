@@ -25,9 +25,15 @@ type Line struct {
 	Src string
 	// Heard is Src as recognized, when the glossary wrote a name in it right.
 	Heard string
-	Tgt   string
-	Done  bool  // translation finished, failed, was skipped, or was canceled; or none was to be done
-	Err   error // why it has no translation: the translator's error, ErrBehind or context.Canceled
+	// Lang is the language it was heard in, of lang.All: the one the recognizer told, else the
+	// session's; "" for lang.Auto before the recognizer told one.
+	Lang string
+	// AsSaid tells it was heard in the language it is translated into: it is not translated, and
+	// shows as said.
+	AsSaid bool
+	Tgt    string
+	Done   bool  // translation finished, failed, was skipped, or was canceled; or none was to be done
+	Err    error // why it has no translation: the translator's error, ErrBehind or context.Canceled
 	// Draft is the translation of the sentence while it was being spoken. A translation streaming
 	// in starts shorter than the draft it replaces, so the draft shows until Done.
 	Draft string
@@ -40,11 +46,12 @@ var ErrBehind = errors.New("behind")
 // State is what the subtitles show.
 type State struct {
 	// Phase is "starting", "downloading" (recognition for the language), "listening" or "stopped".
-	Phase   string
-	Lines   []Line // the latest last, MaxLines at most
-	Pending string // heard and not committed yet
-	Draft   string // a translation of Pending, when Config.Draft
-	Voice   bool   // someone is speaking, as the engine's voice detection says
+	Phase       string
+	Lines       []Line // the latest last, MaxLines at most
+	Pending     string // heard and not committed yet
+	PendingLang string // the language Pending is heard in, as a Line's Lang
+	Draft       string // a translation of Pending, when Config.Draft
+	Voice       bool   // someone is speaking, as the engine's voice detection says
 	// Slow tells the recognizer's network is slow: its text comes late, for the user to check it.
 	Slow  bool
 	Err   error // why the session stopped
@@ -165,7 +172,10 @@ type Session struct {
 	clockAt time.Time
 	// heardAt is when the voice last started, by the wall, until text is recognized after it.
 	heardAt time.Time
-	billed  interface{ Sent() float64 } // a cloud recognizer, which bills the audio sent
+	// heard is the language the recognizer last told it heard, and heardFinal its final results'
+	// last: "" before it told one. On the engine's goroutine.
+	heard, heardFinal string
+	billed            interface{ Sent() float64 } // a cloud recognizer, which bills the audio sent
 	// ends pair each line's speech end with the first words of its translation, by its segment's
 	// Seq, under mu: the first known waits for the other. A line cut from the hypothesis learns its
 	// end from the final result after it, often once its translation shows.
@@ -424,6 +434,13 @@ func (s *Session) handle(ev engine.Event) {
 			}
 		})
 	case "result":
+		// Text of no language known is of none: not of the language heard before.
+		if ev.Lang != "" || strings.TrimSpace(ev.Text()) != "" {
+			s.heard = ev.Lang
+			if ev.Final {
+				s.heardFinal = ev.Lang
+			}
+		}
 		if d, ok := since(s.heardAt); ok && strings.TrimSpace(ev.Text()) != "" {
 			if d <= firstTextWait {
 				lat.FirstText.Add(d)
@@ -456,8 +473,14 @@ func (s *Session) handle(ev engine.Event) {
 	}
 	var spoke []ended
 	now := time.Now()
+	heard := s.spoken(s.heard)
 	for _, a := range acts {
-		q := queued{Line: Line{Src: a.Commit.Text}, seq: a.Commit.Seq, at: now}
+		// A sentence of final results is in their language; one cut from the hypothesis, in its.
+		l := heard
+		if a.Commit.Timed {
+			l = s.spoken(s.heardFinal)
+		}
+		q := queued{Line: Line{Src: a.Commit.Text, Lang: l}, seq: a.Commit.Seq, at: now}
 		if src, _ := s.terms(q.Src); src != q.Src {
 			q.Src, q.Heard = src, q.Src
 		}
@@ -501,8 +524,8 @@ func (s *Session) handle(ev engine.Event) {
 			}
 			s.active[q.ID] = activeLine{Line: q.Line, metadata: metadata}
 			s.emitLine(LineCommitted, q.Line, metadata)
-			if s.cfg.Translator == nil { // nothing to translate it with: it is done
-				q.Done = true
+			if s.cfg.Translator == nil || q.Lang == s.cfg.Tgt { // nothing to translate it with, or into
+				q.Done, q.AsSaid = true, s.cfg.Translator != nil
 				delete(s.active, q.ID)
 				s.emitLine(LineCompleted, q.Line, metadata)
 			} else {
@@ -526,9 +549,18 @@ func (s *Session) handle(ev engine.Event) {
 		if n := len(st.Lines); n > MaxLines {
 			st.Lines = st.Lines[n-MaxLines:]
 		}
-		st.Pending = pending
+		st.Pending, st.PendingLang = pending, heard
 		s.maybeDraft(st)
 	})
+}
+
+// spoken is the language of what was heard, as the recognizer told it (heard), else the session's;
+// "" for lang.Auto before it told one.
+func (s *Session) spoken(heard string) string {
+	if heard != "" || s.cfg.Src == lang.Auto {
+		return heard
+	}
+	return s.cfg.Src
 }
 
 // draftStep is how many letters pending text grows by before it is drafted again: about two
@@ -552,18 +584,18 @@ func (s *Session) maybeDraft(st *State) {
 		return
 	}
 	n := segment.Letters(st.Pending)
-	if n == 0 {
+	if n == 0 || st.PendingLang == s.cfg.Tgt { // nothing to draft, or as said
 		st.Draft, s.draftLen = "", 0
 		return
 	}
-	if s.draftBusy || n-s.draftLen < draftStep(s.cfg.Src) || time.Since(s.draftAt) < 600*time.Millisecond {
+	if s.draftBusy || n-s.draftLen < draftStep(st.PendingLang) || time.Since(s.draftAt) < 600*time.Millisecond {
 		return
 	}
 	s.draftBusy, s.draftLen, s.draftAt = true, n, time.Now()
-	gen, text := s.draftGen, st.Pending
+	gen, text, src := s.draftGen, st.Pending, st.PendingLang
 	// In languages that space words, the last one may be half heard ("tips" as "ti"), and the model
 	// would guess the rest: leave it out.
-	if lang.Spaced(s.cfg.Src) {
+	if lang.Spaced(src) {
 		if i := strings.LastIndexByte(text, ' '); i > 0 && !strings.HasSuffix(text, " ") {
 			text = text[:i]
 		}
@@ -575,7 +607,7 @@ func (s *Session) maybeDraft(st *State) {
 	go func() {
 		defer s.workers.Done()
 		defer cancel()
-		out, err := s.cfg.Translator.Translate(ctx, translate.Request{Src: s.cfg.Src, Tgt: s.cfg.Tgt, Text: text, Draft: true, Terms: terms, About: s.about()}, nil)
+		out, err := s.cfg.Translator.Translate(ctx, translate.Request{Src: src, Tgt: s.cfg.Tgt, Text: text, Draft: true, Terms: terms, About: s.about()}, nil)
 		s.update(func(st *State) {
 			if gen != s.draftGen {
 				return // a commit dropped it
@@ -604,7 +636,7 @@ func (s *Session) translateLoop() {
 			s.update(func(st *State) { st.Stats.Latency.Queue.Add(time.Since(l.at)) })
 			// The terms as the glossary is now: one learned since the line was heard goes with it.
 			_, terms := s.terms(l.Src)
-			r := translate.Request{Src: s.cfg.Src, Tgt: s.cfg.Tgt, Text: l.Src, Terms: terms, About: s.about()}
+			r := translate.Request{Src: l.Lang, Tgt: s.cfg.Tgt, Text: l.Src, Terms: terms, About: s.about()}
 			shown := false // the first words of the translation showed, and were timed
 			first := func(st *State) {
 				if shown {

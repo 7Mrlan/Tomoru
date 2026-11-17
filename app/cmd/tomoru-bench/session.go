@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"tomoru/internal/lang"
 	"tomoru/internal/live"
 )
 
@@ -28,7 +29,8 @@ func target(c Case) (lang, ref string) {
 	return want, ""
 }
 
-// runCase plays a case's recording through a session, recording the subtitles' changes.
+// runCase plays a case's recording through a session, recording the subtitles' changes: heard in
+// the case's language, or as recognition tells it where cfg's Src is lang.Auto.
 func runCase(c Case, media, tmp string, maxSec float64, tail time.Duration, cfg live.Config) Result {
 	tgt, tgtRef := target(c)
 	r := Result{ID: c.ID, Lang: c.Lang, Scene: c.Scene, Tgt: tgt, TgtRef: tgtRef}
@@ -47,7 +49,10 @@ func runCase(c Case, media, tmp string, maxSec float64, tail time.Duration, cfg 
 		wav, dur = cut, maxSec
 	}
 	r.Audio = dur
-	cfg.Src, cfg.Tgt, cfg.File = c.Lang, tgt, wav
+	if cfg.Src != lang.Auto {
+		cfg.Src = c.Lang
+	}
+	cfg.Tgt, cfg.File = tgt, wav
 
 	var mu sync.Mutex
 	var at time.Time // when listening began: the recording's start
@@ -144,7 +149,7 @@ func runCase(c Case, media, tmp string, maxSec float64, tail time.Duration, cfg 
 func recordLine(r *Result, lines map[int]live.Line, t float64, l live.Line) {
 	old, seen := lines[l.ID]
 	if !seen {
-		r.Events = append(r.Events, Event{T: t, Line: l.ID, Src: l.Src, LDraft: l.Draft})
+		r.Events = append(r.Events, Event{T: t, Line: l.ID, Src: l.Src, Lang: l.Lang, LDraft: l.Draft})
 	}
 	if old.Tgt != l.Tgt || old.Done != l.Done || old.Err != l.Err {
 		tgt, why := l.Tgt, ""

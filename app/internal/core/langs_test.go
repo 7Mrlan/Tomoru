@@ -17,7 +17,7 @@ func TestSourceLangs(t *testing.T) {
 		want []string
 	}{
 		{"apple", lang.Spoken()}, // until the system says
-		{"sensevoice-small", []string{"zh", "en", "ja", "ko", "yue"}},
+		{"sensevoice-small", []string{"auto", "zh", "en", "ja", "ko", "yue"}}, // it tells which it hears
 		{QwenCloud, qwencloud.Langs},
 		{"", lang.Spoken()},
 	} {
@@ -95,5 +95,35 @@ func TestPrepareOnlyHeard(t *testing.T) {
 	c.PrepareASR("zh-Hant") // written, not spoken
 	if len(f.ran) != 0 || c.ASR["zh-Hant"] != "" {
 		t.Errorf("prepared Traditional Chinese: ran %v", f.ran)
+	}
+}
+
+// TestAuto has a recognition that tells the language it hears offer lang.Auto, which swaps with
+// nothing, and becomes a language heard with one that does not tell it.
+func TestAuto(t *testing.T) {
+	c, _ := newCore(t)
+	c.Prefs.ASR, c.Prefs.Src, c.Prefs.Tgt = "sensevoice-small", "ja", "zh"
+	c.SetSrc(lang.Auto)
+	if c.Prefs.Src != lang.Auto || c.Prefs.Tgt != "zh" || c.CanSwap() {
+		t.Fatalf("auto → %s, can swap %v", c.Prefs.Tgt, c.CanSwap())
+	}
+	c.Swap()
+	if c.Prefs.Src != lang.Auto {
+		t.Errorf("swapped to %s → %s", c.Prefs.Src, c.Prefs.Tgt)
+	}
+	// Speaking the target: it takes the other's place, which is no language to translate into.
+	c.SetSrc("zh")
+	if c.Prefs.Src != "zh" || c.Prefs.Tgt != "en" {
+		t.Errorf("zh, the target, spoken: %s → %s", c.Prefs.Src, c.Prefs.Tgt)
+	}
+	c.SetSrc(lang.Auto)
+	c.SetSrc("en")
+	if c.Prefs.Src != "en" || c.Prefs.Tgt != "zh" {
+		t.Errorf("en, the target, spoken: %s → %s", c.Prefs.Src, c.Prefs.Tgt)
+	}
+	c.SetSrc(lang.Auto)
+	c.use(Engine{ID: QwenCloud, Kind: ASR})
+	if c.Prefs.Src != "en" {
+		t.Errorf("a recognition that does not tell the language: %s", c.Prefs.Src)
 	}
 }

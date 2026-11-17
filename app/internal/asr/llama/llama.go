@@ -19,6 +19,7 @@ import (
 	"golang.org/x/text/language/display"
 
 	"tomoru/internal/asr/batch"
+	"tomoru/internal/lang"
 	"tomoru/internal/models"
 )
 
@@ -43,7 +44,7 @@ const (
 	tokensMore      = 16
 )
 
-// The model tells the language it hears, and a decode keeps it when the model is sure the session's
+// The model tells the language it hears. A decode keeps it when the model is sure the session's
 // language is not what it heard: the session's below e^sure, three in ten million. Else it decodes
 // again in the session's language. Told the session's language alone, the model wrote other
 // languages as its own translation, or as no speech; telling the language itself, it took songs for
@@ -60,54 +61,126 @@ const topLogprobs = 10
 
 // Decoder is llama-server, serving a recognition model at its URL.
 type Decoder struct {
-	url, grammar string
-	lang         string // the session's language as the model names it ("Japanese"); "" for none
-	context      string // the system message, what the model is told to expect
-	client       *http.Client
-	done         chan struct{}
-	stop         sync.Once
+	url string
+	// lang is the session's language as the model names it ("Japanese"), code as lang.All does
+	// ("ja"), and grammar the grammar of it; "" for one the model does not know. For lang.Auto,
+	// they are the language last heard, and any the grammar of all the model recognizes: changed
+	// by a decode, of which there is one at a time, as the batch runner decodes.
+	lang, code, grammar, any string
+	context                  string // the system message, what the model is told to expect
+	client                   *http.Client
+	done                     chan struct{}
+	stop                     sync.Once
 }
 
-// New decodes speech in lang with the server at url, given context: text that helps it hear, as
-// Qwen3-ASR takes it in its system message (names, a description), or "".
-func New(url, lang, context string) *Decoder {
-	d := &Decoder{url: url, grammar: grammar(lang), context: context, client: &http.Client{}, done: make(chan struct{})}
-	if d.grammar != "" {
-		d.lang = name(lang)
+// New decodes speech in code, of lang.All, with the server at url, given context: text that helps
+// it hear, as Qwen3-ASR takes it in its system message (names, a description), or "". lang.Auto has
+// the model tell the language of each stretch (brief).
+func New(url, code, context string) *Decoder {
+	d := &Decoder{url: url, context: context, client: &http.Client{}, done: make(chan struct{})}
+	if code == lang.Auto {
+		d.any = grammar(code)
+	} else {
+		d.follow(code)
 	}
 	return d
 }
 
-func name(lang string) string { return display.English.Tags().Name(language.Make(lang)) }
-
-// grammar limits how the model's answer starts, "language Japanese<asr_text>…", to the language
-// or None, which is how it says it heard no speech; "" for a language it does not know. The answer
-// must not be started for it with the language: then it has to write something for music, applause
-// or a crowd too, and writes a sentence of its own, or its context.
-func grammar(lang string) string {
-	if !slices.Contains(models.Qwen3ASRLangs, lang) {
-		return ""
+// follow has the decoder decode code, of the model's languages, from now; others, nothing.
+func (d *Decoder) follow(code string) {
+	if g := grammar(code); g != "" && code != lang.Auto {
+		d.lang, d.code, d.grammar = name(code), code, g
 	}
-	return `root ::= "language " ("` + name(lang) + `" | "None") [^\x00]*`
 }
 
-// Decode decodes a stretch: its text in pieces, a character or a word each, untimed.
+func name(code string) string { return display.English.Tags().Name(language.Make(code)) }
+
+// codes are the languages the model recognizes, of lang.All, by the names it gives them.
+var codes = sync.OnceValue(func() map[string]string {
+	m := map[string]string{}
+	for _, c := range models.Qwen3ASRLangs {
+		m[name(c)] = c
+	}
+	return m
+})
+
+// grammar limits how the model's answer starts, "language Japanese<asr_text>…", to the language,
+// any it recognizes for lang.Auto, or None, which is how it says it heard no speech; "" for a
+// language it does not know. The answer must not be started for it with the language: then it has
+// to write something for music, applause or a crowd too, and writes a sentence of its own, or its
+// context.
+func grammar(code string) string {
+	var names []string
+	switch {
+	case code == lang.Auto:
+		for _, c := range models.Qwen3ASRLangs {
+			names = append(names, `"`+name(c)+`"`)
+		}
+	case slices.Contains(models.Qwen3ASRLangs, code):
+		names = []string{`"` + name(code) + `"`}
+	default:
+		return ""
+	}
+	return `root ::= "language " (` + strings.Join(append(names, `"None"`), " | ") + `) [^\x00]*`
+}
+
+// Decode decodes a stretch: its text in pieces, a character or a word each, untimed, in the
+// language heard.
 func (d *Decoder) Decode(ctx context.Context, pcm []byte) ([]batch.Piece, error) {
-	text, err := d.transcribe(ctx, pcm)
+	text, heard, err := d.transcribe(ctx, pcm)
 	if err != nil {
 		return nil, err
 	}
-	return batch.Pieces(text), nil
+	if !lang.Fits(text, heard) {
+		// Decoded again in a language, the model may still write another: of none known.
+		heard = ""
+	}
+	pieces := batch.Pieces(text)
+	for i := range pieces {
+		pieces[i].Lang = heard
+	}
+	return pieces, nil
 }
 
-func (d *Decoder) transcribe(ctx context.Context, pcm []byte) (string, error) {
+// transcribe decodes pcm: its text, and its language, of lang.All; "" for one the model does not
+// recognize.
+func (d *Decoder) transcribe(ctx context.Context, pcm []byte) (string, string, error) {
+	if d.lang == "" {
+		a, err := d.ask(ctx, pcm, d.any)
+		heard := codes()[a.label]
+		if d.any != "" {
+			d.follow(heard)
+		}
+		return a.text, heard, err
+	}
 	a, err := d.ask(ctx, pcm, "")
-	if err != nil || d.lang == "" || a.label == d.lang || a.label == "None" || a.session < sure {
-		return a.text, err
+	heard := codes()[a.label]
+	switch {
+	case err != nil || a.label == d.lang || a.label == "None":
+		return a.text, d.code, err
+	case heard != "" && d.any != "" && len(pcm) >= 2*rate*brief:
+		d.follow(heard)
+		return a.text, heard, nil
+	case a.session < sure:
+		if d.any != "" {
+			d.follow(heard)
+		}
+		return a.text, heard, nil
 	}
 	a, err = d.ask(ctx, pcm, d.grammar)
-	return a.text, err
+	return a.text, d.code, err
 }
+
+// brief is the seconds of a stretch, of a session of lang.Auto, under which the language the model
+// tells is taken only where it is sure the language heard last is not what it heard (sure); else
+// the stretch is decoded again in that. A longer one is taken as told. Told each stretch's
+// language, the model took short lines for another: 5 of 23 lines of an anime trailer, written as
+// English ("The table.") or Chinese; 3 at 1.5 s, 2 at 3 s. Keeping the language heard last unless
+// sure, whatever the length, it held on to it: Korean interpreting after Chinese, written in
+// Korean, was taken for Chinese throughout, and so shown untranslated in a session into Chinese.
+// At 3 s, on a slower GPU (GTX 1650), an interpreter's Chinese after English showed as English
+// translations: the language changing is what Auto-detect is for.
+const brief = 1.5
 
 // reply is what a decode heard: its text, the language it named, and how likely the session's
 // language was there, as a log probability: at most that of the least likely token listed when it
@@ -227,7 +300,7 @@ func answer(s string) string {
 func Warm(ctx context.Context, url string) error {
 	d := New(url, "", "")
 	defer d.Stop()
-	_, err := d.transcribe(ctx, make([]byte, 32000))
+	_, _, err := d.transcribe(ctx, make([]byte, 32000))
 	return err
 }
 

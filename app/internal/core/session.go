@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"tomoru/internal/asr"
+	"tomoru/internal/lang"
 	"tomoru/internal/live"
 	"tomoru/internal/models"
 )
@@ -242,7 +243,7 @@ func (c *Core) RestartIfRunning() {
 	}
 }
 
-// SetSrc makes l the language spoken; choosing the target swaps them.
+// SetSrc makes l the language spoken; choosing the target swaps them (lang.Choose).
 func (c *Core) SetSrc(l string) { c.setLang(&c.Prefs.Src, &c.Prefs.Tgt, l) }
 
 // SetTgt makes l the language to translate into; choosing the source swaps them.
@@ -252,10 +253,7 @@ func (c *Core) setLang(side, other *string, l string) {
 	if l == *side {
 		return
 	}
-	if l == *other {
-		*other = *side
-	}
-	*side = l
+	lang.Choose(side, other, l)
 	c.fitLangs()
 	c.keepLangs()
 	c.RestartIfRunning()

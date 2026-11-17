@@ -98,6 +98,35 @@ func TestOriginalOnly(t *testing.T) {
 	}
 }
 
+// TestAsSaid shows a sentence said in the language translated into in the translation's place,
+// alone, as it is being said too; with the original alone, as an original.
+func TestAsSaid(t *testing.T) {
+	p := prefs.Default("zh-Hans")
+	p.Src, p.Shown = "auto", 3
+	st := live.State{Pending: "我们BLG", PendingLang: "zh", Lines: []live.Line{
+		{ID: 1, Src: "Hello.", Lang: "en", Tgt: "你好。", Done: true},
+		{ID: 2, Src: "我们BLG就是最强的。", Lang: "zh", AsSaid: true, Done: true},
+	}}
+	got := Visible(st, 0, p)
+	if len(got) != 3 || got[0].Src != "Hello." || got[0].Lang != "en" {
+		t.Fatalf("%+v", got)
+	}
+	if got[1].Src != "" || got[1].Tgt != "我们BLG就是最强的。" || got[1].DimTgt || got[1].Note {
+		t.Errorf("said in the language translated into: %+v", got[1])
+	}
+	if got[2].Src != "" || got[2].Tgt != "我们BLG" || !got[2].Pending {
+		t.Errorf("being said in it: %+v", got[2])
+	}
+	p.Display = prefs.DisplayTgt
+	if got := Visible(st, 0, p); len(got) != 3 {
+		t.Errorf("the translation alone: %+v", got)
+	}
+	p.Display = prefs.DisplaySrc
+	if got := Visible(st, 0, p); len(got) != 3 || got[1].Src != "我们BLG就是最强的。" || got[1].Tgt != "" || got[2].Src != "我们BLG" {
+		t.Errorf("the original alone: %+v", got)
+	}
+}
+
 // TestFailure says why a line has no translation, from what the translator's requests did.
 func TestFailure(t *testing.T) {
 	replies := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

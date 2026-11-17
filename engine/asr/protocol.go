@@ -13,6 +13,7 @@ type Event struct {
 	Type, Engine, Version, Code, Message, ID string
 	Protocol                                 int
 	Tokens                                   []Token
+	Lang                                     string // decoded: the language heard, "" for none
 }
 
 type Token struct {
@@ -40,7 +41,8 @@ func (e Event) MarshalJSON() ([]byte, error) {
 			Type   string  `json:"type"`
 			ID     string  `json:"id"`
 			Tokens []Token `json:"tokens"`
-		}{e.Type, e.ID, tokens})
+			Lang   string  `json:"lang,omitempty"`
+		}{e.Type, e.ID, tokens, e.Lang})
 	case "error":
 		return json.Marshal(struct {
 			Type    string `json:"type"`

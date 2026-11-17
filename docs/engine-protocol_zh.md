@@ -70,6 +70,7 @@ tomoru-engine select --out <png>                     让用户框选屏幕的一
 - **文本**是各 token 的 `text` 连起来，包括其中的空格和标点。
 - **token 的时间**：临时结果里识别器还没给词计时时，可以没有 `start` 和 `end`。
 - **`conf`** 是识别器给出的 0 到 1 的置信度（如果它给的话）。macOS 上只有定稿结果有。
+- **`lang`** 是听出的语言，用 app 的语言代码（`ja`、`zh`），识别器说了才有：app 自己的识别器（tomoru-asr 的 SenseVoice、Qwen3-ASR）逐句给出，「自动检测」的会话靠它知道每行是哪种语言。采集引擎不带它。
 
 ### `clock`
 
@@ -148,7 +149,7 @@ tomoru-engine select --out <png>                     让用户框选屏幕的一
 ## tomoru-asr
 
 ```
-tomoru-asr serve --model <dir> --lang <zh|en|ja|ko|yue> [--threads <n>]   解码一段段语音
+tomoru-asr serve --model <dir> --lang <auto|zh|en|ja|ko|yue> [--threads <n>]   解码一段段语音
 ```
 
 `<dir>` 是一个下载好的模型（SenseVoice：`model.int8.onnx` 和 `tokens.txt`）。app 把语音切成段，每段在变长时和结束时请求解码（`app/internal/asr/batch`，[识别适配层](recognition_zh.md)）；tomoru-asr 只负责解码。
@@ -159,10 +160,10 @@ tomoru-asr serve --model <dir> --lang <zh|en|ja|ko|yue> [--threads <n>]   解码
   {"type":"decode","id":"7","pcm":"AAD//wEA/38="}
   ```
 
-- **stdout** 承载 `hello`（`"engine":"asr"`），然后每个 `decode` 按顺序回一个 `decoded`，`id` 相同：这段的 token，每个带从这段开头算起的时间，没有 `end`。SenseVoice 在中文、粤语、日语词之间插的空格已去掉。
+- **stdout** 承载 `hello`（`"engine":"asr"`），然后每个 `decode` 按顺序回一个 `decoded`，`id` 相同：这段的 token，每个带从这段开头算起的时间，没有 `end`；还有它的 `lang`：`--lang` 给的语言，`auto` 时是 SenseVoice 听出的语言，没听出就没有这个字段。SenseVoice 在中文、粤语、日语词之间插的空格已去掉。
 
   ```json
-  {"type":"decoded","id":"7","tokens":[{"text":"Hello","start":0},{"text":".","start":0.48}]}
+  {"type":"decoded","id":"7","tokens":[{"text":"Hello","start":0},{"text":".","start":0.48}],"lang":"en"}
   ```
 
 - 它的 `error` code 是 `model-failed` 和 `internal`（无效的 JSON、格式错误的 PCM 或读输入出错），出错即退出。

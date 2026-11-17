@@ -40,6 +40,9 @@ type Event struct {
 	Start  float64 `json:"start,omitempty"`
 	End    float64 `json:"end,omitempty"`
 	Tokens []Token `json:"tokens,omitempty"`
+	// Lang is the language heard, of lang.All, where the recognizer tells it (tomoru-asr's decoded,
+	// and the results of the app's recognizers that tell it); "" elsewhere.
+	Lang string `json:"lang,omitempty"`
 
 	// clock, voice, audio: seconds of audio
 	T float64 `json:"t,omitempty"`
