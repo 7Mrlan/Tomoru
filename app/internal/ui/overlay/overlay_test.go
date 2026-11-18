@@ -18,12 +18,12 @@ import (
 	"tomoru/locales"
 )
 
-// The subtitles show over other apps in full screen: a window that may go full screen is kept out
-// of their Spaces (egoist/mygo#309), so the overlay's must not be one.
+// The subtitles show over other apps in full screen as an auxiliary of their Spaces: MyGo makes one
+// of a window on all workspaces that cannot go full screen itself (egoist/mygo#309).
 func TestWindowOverFullScreen(t *testing.T) {
 	opts := windowOptions(mygo.Rectangle{Width: 1000, Height: 520}, nil)
 	if !opts.DisableFullScreen {
-		t.Error("the window may go full screen, so macOS keeps it out of full-screen Spaces")
+		t.Error("the window may go full screen, so it is no full-screen auxiliary")
 	}
 	if !opts.AlwaysOnTop {
 		t.Error("the window is not always on top, so the subtitles go behind the video")

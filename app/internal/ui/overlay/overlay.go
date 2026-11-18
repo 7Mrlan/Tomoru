@@ -79,9 +79,9 @@ func New(k *core.Core, nav shared.Nav) *Overlay {
 }
 
 // windowOptions makes the overlay's window: the work area, plus below for the newest line sliding
-// in, with content drawn there. DisableFullScreen keeps the window out of full screen itself, and
-// makes it an auxiliary of other apps' full-screen Spaces, where an accessory app's windows show
-// (egoist/mygo#309): macOS keeps a window that may go full screen out of them.
+// in, with content drawn there. DisableFullScreen keeps the window out of full screen itself; with
+// SetVisibleOnAllWorkspaces, MyGo then makes it an auxiliary of other apps' full-screen Spaces
+// (egoist/mygo#309), the way macOS documents for showing over them.
 func windowOptions(area mygo.Rectangle, content mygo.Content) mygo.WindowOptions {
 	return mygo.WindowOptions{
 		Title: "Tomoru", X: area.X, Y: area.Y,
